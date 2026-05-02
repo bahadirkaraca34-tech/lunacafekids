@@ -1095,16 +1095,10 @@ function openMenuModal(childId){
 function closeMenuModal(){
   document.getElementById('menuOverlay').classList.remove('open');
   if (window._tableMenuMode) {
-    // Masa menüsünden çıkıyoruz, masa modalını tekrar öne al ve güncelle
     window._tableMenuMode = false;
-    const tm = document.getElementById('tableModal');
-    if (tm) {
-      tm.style.zIndex = '';
-      // Masa listesini güncelle
-      loadTables().then(()=>{
-        if (activeTableNo) openTableModal(activeTableNo);
-      });
-    }
+    loadTables().then(()=>{
+      if (activeTableNo) openTableModal(activeTableNo);
+    });
   }
 }
 
@@ -1738,9 +1732,8 @@ function closeTableModal() {
 }
 
 function openTableMenu() {
-  // Masa modalını gizle (kapat değil), menüyü üstüne aç
   const tm = document.getElementById('tableModal');
-  if (tm) tm.style.zIndex = '700';
+  if (tm) tm.classList.remove('open');
   document.getElementById('menuChildName').textContent = `☕ Masa ${activeTableNo}`;
   document.getElementById('menuSubtitle').textContent = 'Masaya ürün ekle';
   window._tableMenuMode = true;
@@ -1803,7 +1796,8 @@ if(sessionStorage.getItem('lck_auth')==='1'){
 } else {
   document.getElementById('loadingScreen').classList.add('hidden');
 }
-setInterval(()=>loadChildren(),3000);
+// Socket ile gerçek zamanlı güncelleme yapılıyor
+// setInterval ile loadChildren kaldırıldı - çift güncelleme önlendi
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
