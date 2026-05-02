@@ -1095,10 +1095,12 @@ function openMenuModal(childId){
 function closeMenuModal(){
   document.getElementById('menuOverlay').classList.remove('open');
   if (window._tableMenuMode) {
+    const no = window._tableMenuNo;
     window._tableMenuMode = false;
-    loadTables().then(()=>{
-      if (activeTableNo) openTableModal(activeTableNo);
-    });
+    window._tableMenuNo = null;
+    if (no) {
+      loadTables().then(()=> openTableModal(no));
+    }
   }
 }
 
@@ -1734,9 +1736,10 @@ function closeTableModal() {
 function openTableMenu() {
   const tm = document.getElementById('tableModal');
   if (tm) tm.classList.remove('open');
+  window._tableMenuMode = true;
+  window._tableMenuNo = activeTableNo;
   document.getElementById('menuChildName').textContent = `☕ Masa ${activeTableNo}`;
   document.getElementById('menuSubtitle').textContent = 'Masaya ürün ekle';
-  window._tableMenuMode = true;
   showMenuCats();
   document.getElementById('menuOverlay').classList.add('open');
 }
