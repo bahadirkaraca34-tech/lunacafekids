@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1A1A2E">
+<title>🌙 Luna Cafe Kids — Oyun Alanı</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="/socket.io/socket.io.js"></script>
+<style>
+:root {
+  --coral:#FF5C5C;--orange:#FF8C42;--yellow:#FFD166;
+  --teal:#06D6A0;--dark:#1A1A2E;--card-border:rgba(255,255,255,0.1);
+  --text:#F0F0F0;--text-muted:rgba(240,240,240,0.5);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'Poppins',sans-serif;background:var(--dark);color:var(--text);
+  min-height:100vh;overflow-x:hidden;
+  background-image:
+    radial-gradient(ellipse at 20% 10%,rgba(155,93,229,.15) 0%,transparent 50%),
+    radial-gradient(ellipse at 80% 80%,rgba(6,214,160,.1) 0%,transparent 50%);
+}
+
+/* LOGIN */
+.login-screen{
+  position:fixed;inset:0;background:var(--dark);
+  display:flex;align-items:center;justify-content:center;
+  z-index:9999;padding:20px;
+  background-image:radial-gradient(ellipse at 30% 20%,rgba(155,93,229,.2) 0%,transparent 50%),
+    radial-gradient(ellipse at 70% 80%,rgba(6,214,160,.15) 0%,transparent 50%);
+}
+.login-screen.hidden{display:none;}
+.login-box{
+  background:rgba(255,255,255,.06);border:1.5px solid var(--card-border);
+  border-radius:24px;padding:40px 32px;width:100%;max-width:380px;
+  backdrop-filter:blur(20px);text-align:center;
+}
+.login-logo{font-family:'Fredoka One',cursive;font-size:32px;color:var(--yellow);margin-bottom:6px;}
+.login-sub{font-size:13px;color:var(--text-muted);font-weight:600;margin-bottom:28px;}
+.login-field{
+  width:100%;padding:14px 16px;background:rgba(255,255,255,.08);
+  border:1.5px solid var(--card-border);border-radius:12px;
+  font-family:'Poppins',sans-serif;font-size:15px;font-weight:600;color:var(--text);
+  outline:none;margin-bottom:12px;-webkit-appearance:none;
+}
+.login-field:focus{border-color:var(--yellow);}
+.login-field::placeholder{color:var(--text-muted);}
+.login-btn{
+  width:100%;padding:14px;background:linear-gradient(135deg,var(--coral),var(--orange));
+  border:none;border-radius:12px;color:white;font-family:'Poppins',sans-serif;
+  font-size:16px;font-weight:800;cursor:pointer;margin-top:4px;
+}
+.login-btn:active{opacity:.85;}
+.login-error{color:var(--coral);font-size:13px;font-weight:600;margin-top:10px;min-height:20px;}
+
+/* HEADER */
+.tv-header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:18px 32px;
+  background:rgba(26,26,46,.95);
+  border-bottom:2px solid rgba(255,209,102,.2);
+  backdrop-filter:blur(20px);
+  position:sticky;top:0;z-index:100;
+}
+.tv-logo{font-family:'Fredoka One',cursive;font-size:28px;color:var(--yellow);display:flex;align-items:center;gap:10px;}
+.tv-logo-sub{font-size:13px;color:var(--text-muted);font-weight:600;margin-top:2px;}
+.tv-clock-wrap{text-align:center;}
+.tv-clock{font-family:'Fredoka One',cursive;font-size:36px;color:var(--yellow);line-height:1;}
+.tv-date{font-size:13px;color:var(--text-muted);font-weight:600;margin-top:2px;}
+.tv-count{text-align:right;font-family:'Fredoka One',cursive;font-size:22px;color:var(--teal);}
+.tv-count-sub{font-size:12px;color:var(--text-muted);font-weight:600;margin-top:2px;}
+
+/* GRID */
+.tv-body{padding:24px 28px;}
+.tv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;}
+
+/* CARD */
+.tv-card{
+  background:rgba(255,255,255,.05);border:2px solid var(--card-border);
+  border-radius:24px;padding:28px 24px;text-align:center;transition:all .3s;
+  position:relative;overflow:hidden;
+}
+.tv-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:var(--card-border);transition:background .5s;}
+.tv-card.running::before{background:linear-gradient(90deg,var(--teal),#04A87B);}
+.tv-card.warning::before{background:linear-gradient(90deg,var(--yellow),var(--orange));}
+.tv-card.expired::before{background:linear-gradient(90deg,var(--coral),#FF3B3B);}
+.tv-card.running{border-color:rgba(6,214,160,.3);}
+.tv-card.warning{border-color:rgba(255,209,102,.4);animation:pulse-warn 1.5s infinite;}
+.tv-card.expired{border-color:rgba(255,92,92,.5);background:rgba(255,92,92,.07);animation:pulse-red 1.5s infinite;}
+@keyframes pulse-warn{0%,100%{box-shadow:none}50%{box-shadow:0 0 24px rgba(255,209,102,.25)}}
+@keyframes pulse-red{0%,100%{box-shadow:none}50%{box-shadow:0 0 28px rgba(255,92,92,.3)}}
+.tv-card-name{font-family:'Fredoka One',cursive;font-size:28px;color:var(--text);margin-bottom:4px;}
+.tv-card-dur{font-size:13px;color:var(--text-muted);font-weight:600;margin-bottom:20px;}
+.tv-timer{font-family:'Fredoka One',cursive;font-size:64px;letter-spacing:2px;line-height:1;margin:8px 0;}
+.tc-green{color:var(--teal);}.tc-yellow{color:var(--yellow);}.tc-red{color:var(--coral);}
+.tv-status{font-size:14px;font-weight:700;margin-top:12px;padding:6px 16px;border-radius:20px;display:inline-block;}
+.tv-status.s-run{background:rgba(6,214,160,.15);color:var(--teal);}
+.tv-status.s-warn{background:rgba(255,209,102,.15);color:var(--yellow);}
+.tv-status.s-exp{background:rgba(255,92,92,.15);color:var(--coral);}
+.tv-empty{text-align:center;padding:80px 20px;color:var(--text-muted);grid-column:1/-1;}
+.tv-empty-icon{font-size:80px;display:block;margin-bottom:16px;}
+.tv-empty-text{font-family:'Fredoka One',cursive;font-size:28px;}
+.tv-footer{text-align:center;padding:16px;font-size:12px;color:rgba(240,240,240,.2);font-weight:600;border-top:1px solid rgba(255,255,255,.05);margin-top:20px;}
+.conn-badge{position:fixed;bottom:16px;right:16px;padding:6px 14px;border-radius:20px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:5px;background:rgba(6,214,160,.15);border:1px solid rgba(6,214,160,.3);color:var(--teal);}
+.conn-badge.offline{background:rgba(255,92,92,.15);border-color:rgba(255,92,92,.3);color:var(--coral);}
+.conn-dot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:blink 1.2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">📺 Oyun Alanı</div>
+    <div class="login-sub">Luna Cafe Kids — TV Girişi</div>
+    <input class="login-field" id="tvUser" type="text" placeholder="Kullanıcı adı" autocomplete="off" autocorrect="off" autocapitalize="off"/>
+    <input class="login-field" id="tvPass" type="password" placeholder="Şifre" onkeydown="if(event.key==='Enter')tvLogin()"/>
+    <button class="login-btn" onclick="tvLogin()">Giriş Yap</button>
+    <div class="login-error" id="tvLoginError"></div>
+    <div style="margin-top:20px;font-size:11px;color:var(--text-muted);">© 2025 Karaca Yazılım</div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="tv-header">
+  <div>
+    <div class="tv-logo">🌙 Luna Cafe Kids</div>
+    <div class="tv-logo-sub">Oyun Alanı</div>
+  </div>
+  <div class="tv-clock-wrap">
+    <div class="tv-clock" id="tvClock">--:--</div>
+    <div class="tv-date" id="tvDate"></div>
+  </div>
+  <div>
+    <div class="tv-count" id="tvCount">0</div>
+    <div class="tv-count-sub">aktif çocuk</div>
+  </div>
+</div>
+
+<!-- GRID -->
+<div class="tv-body">
+  <div class="tv-grid" id="tvGrid">
+    <div class="tv-empty"><span class="tv-empty-icon">🎪</span><div class="tv-empty-text">Oyun alanı boş</div></div>
+  </div>
+</div>
+
+<div class="tv-footer">© 2025 Karaca Yazılım · Luna Cafe Kids</div>
+
+<div class="conn-badge" id="connBadge">
+  <div class="conn-dot"></div>
+  <span id="connText">Bağlanıyor...</span>
+</div>
+
+<script>
+// ══ TV GİRİŞ ══
+const TV_USER = 'lunatv';
+const TV_PASS = 'aynurluna1';
+
+function tvLogin() {
+  const u = document.getElementById('tvUser').value.trim();
+  const p = document.getElementById('tvPass').value;
+  if (u === TV_USER && p === TV_PASS) {
+    sessionStorage.setItem('tv_auth','1');
+    document.getElementById('loginScreen').classList.add('hidden');
+    initTV();
+  } else {
+    document.getElementById('tvLoginError').textContent = '❌ Kullanıcı adı veya şifre hatalı!';
+    document.getElementById('tvPass').value = '';
+  }
+}
+
+// ══ TV INIT ══
+let children = [];
+let socket;
+
+function initTV() {
+  socket = io();
+  const connBadge = document.getElementById('connBadge');
+  socket.on('connect', () => {
+    connBadge.className = 'conn-badge';
+    document.getElementById('connText').textContent = 'Canlı';
+    loadChildren();
+  });
+  socket.on('disconnect', () => {
+    connBadge.className = 'conn-badge offline';
+    document.getElementById('connText').textContent = 'Bağlantı Kesildi';
+  });
+  socket.on('children:update', () => loadChildren());
+  socket.on('timer:tick', (ticks) => {
+    ticks.forEach(t => {
+      const c = children.find(x => x._id?.toString() === t.id?.toString());
+      if (c) { c.remaining = t.remaining; c.status = t.status; }
+    });
+    updateDisplays();
+    updateCount();
+  });
+  socket.on('timer:alert', (alert) => {
+    if (alert.type === 'expired') playBell();
+  });
+  setInterval(loadChildren, 5000);
+}
+
+async function loadChildren() {
+  const res = await fetch('/api/children');
+  children = await res.json();
+  renderGrid();
+  updateCount();
+}
+
+function renderGrid() {
+  const active = children.filter(c => c.status !== 'paid');
+  const grid = document.getElementById('tvGrid');
+  if (!active.length) {
+    grid.innerHTML = `<div class="tv-empty"><span class="tv-empty-icon">🎪</span><div class="tv-empty-text">Oyun alanı boş</div></div>`;
+    return;
+  }
+  grid.innerHTML = active.map(c => tvCard(c)).join('');
+}
+
+function tvCard(c) {
+  const mins = Math.floor(c.remaining/60), secs = c.remaining%60;
+  const timeStr = c.status==='expired' ? 'BİTTİ' : String(mins).padStart(2,'0')+':'+String(secs).padStart(2,'0');
+  const tc = c.status==='expired'?'tc-red':c.status==='warning'?'tc-yellow':'tc-green';
+  const statusTxt = c.status==='expired'?'🔔 Süre Doldu':c.status==='warning'?'⚠️ Son 5 Dakika':'🟢 Oynuyor';
+  const statusCls = c.status==='expired'?'s-exp':c.status==='warning'?'s-warn':'s-run';
+  const id = c._id?.toString();
+  return `
+    <div class="tv-card ${c.status}" id="tvc-${id}">
+      <div class="tv-card-name">${c.fullName}</div>
+      <div class="tv-card-dur">⏱ ${c.duration} dakika</div>
+      <div class="tv-timer ${tc}" id="tvt-${id}">${timeStr}</div>
+      <div class="tv-status ${statusCls}">${statusTxt}</div>
+    </div>`;
+}
+
+function updateDisplays() {
+  children.forEach(c => {
+    if (c.status==='paid') return;
+    const id = c._id?.toString();
+    const el = document.getElementById('tvt-'+id);
+    const card = document.getElementById('tvc-'+id);
+    if (!el) return;
+    if (c.status==='expired') {
+      el.textContent='BİTTİ'; el.className='tv-timer tc-red';
+      if (card) card.className='tv-card expired'; return;
+    }
+    const mins=Math.floor(c.remaining/60), secs=c.remaining%60;
+    el.textContent=String(mins).padStart(2,'0')+':'+String(secs).padStart(2,'0');
+    el.className='tv-timer '+(c.status==='warning'?'tc-yellow':'tc-green');
+    if (card) card.className='tv-card '+c.status;
+  });
+}
+
+function updateCount() {
+  document.getElementById('tvCount').textContent = children.filter(c=>c.status!=='paid').length;
+}
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('tvClock').textContent = now.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('tvDate').textContent = now.toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'});
+}
+setInterval(updateClock,1000);
+updateClock();
+
+function playBell() {
+  try {
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    [[523,0],[659,.18],[784,.36],[1047,.54],[784,.72],[523,.9]].forEach(([freq,t])=>{
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);o.frequency.value=freq;o.type='triangle';
+      g.gain.setValueAtTime(.3,ctx.currentTime+t);
+      g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+t+.5);
+      o.start(ctx.currentTime+t);o.stop(ctx.currentTime+t+.6);
+    });
+  }catch(e){}
+}
+
+// ══ INIT ══
+if (sessionStorage.getItem('tv_auth')==='1') {
+  document.getElementById('loginScreen').classList.add('hidden');
+  initTV();
+}</script>
+</body>
+</html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1A1A2E">
+<title>🌙 Luna Cafe Kids — Oyun Alanı</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="/socket.io/socket.io.js"></script>
+<style>
+:root {
+  --coral:#FF5C5C;--orange:#FF8C42;--yellow:#FFD166;
+  --teal:#06D6A0;--dark:#1A1A2E;--card-border:rgba(255,255,255,0.1);
+  --text:#F0F0F0;--text-muted:rgba(240,240,240,0.5);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'Poppins',sans-serif;background:var(--dark);color:var(--text);
+  min-height:100vh;overflow-x:hidden;
+  background-image:
+    radial-gradient(ellipse at 20% 10%,rgba(155,93,229,.15) 0%,transparent 50%),
+    radial-gradient(ellipse at 80% 80%,rgba(6,214,160,.1) 0%,transparent 50%);
+}
+
+/* HEADER */
+.tv-header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:18px 32px;
+  background:rgba(26,26,46,.95);
+  border-bottom:2px solid rgba(255,209,102,.2);
+  backdrop-filter:blur(20px);
+  position:sticky;top:0;z-index:100;
+}
+.tv-logo{
+  font-family:'Fredoka One',cursive;font-size:28px;color:var(--yellow);
+  display:flex;align-items:center;gap:10px;
+}
+.tv-logo-sub{font-size:13px;color:var(--text-muted);font-weight:600;margin-top:2px;}
+.tv-clock-wrap{text-align:center;}
+.tv-clock{font-family:'Fredoka One',cursive;font-size:36px;color:var(--yellow);line-height:1;}
+.tv-date{font-size:13px;color:var(--text-muted);font-weight:600;margin-top:2px;}
+.tv-count{
+  text-align:right;
+  font-family:'Fredoka One',cursive;font-size:22px;color:var(--teal);
+}
+.tv-count-sub{font-size:12px;color:var(--text-muted);font-weight:600;margin-top:2px;}
+
+/* GRID */
+.tv-body{padding:24px 28px;}
+.tv-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  gap:20px;
+}
+
+/* CARD */
+.tv-card{
+  background:rgba(255,255,255,.05);
+  border:2px solid var(--card-border);
+  border-radius:24px;padding:28px 24px;
+  text-align:center;transition:all .3s;
+  position:relative;overflow:hidden;
+}
+.tv-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:4px;
+  background:var(--card-border);transition:background .5s;
+}
+.tv-card.running::before{background:linear-gradient(90deg,var(--teal),#04A87B);}
+.tv-card.warning::before{background:linear-gradient(90deg,var(--yellow),var(--orange));}
+.tv-card.expired::before{background:linear-gradient(90deg,var(--coral),#FF3B3B);}
+
+.tv-card.running{border-color:rgba(6,214,160,.3);}
+.tv-card.warning{border-color:rgba(255,209,102,.4);animation:pulse-warn 1.5s infinite;}
+.tv-card.expired{border-color:rgba(255,92,92,.5);background:rgba(255,92,92,.07);animation:pulse-red 1.5s infinite;}
+@keyframes pulse-warn{0%,100%{box-shadow:none}50%{box-shadow:0 0 24px rgba(255,209,102,.25)}}
+@keyframes pulse-red{0%,100%{box-shadow:none}50%{box-shadow:0 0 28px rgba(255,92,92,.3)}}
+
+.tv-card-name{font-family:'Fredoka One',cursive;font-size:28px;color:var(--text);margin-bottom:4px;}
+.tv-card-dur{font-size:13px;color:var(--text-muted);font-weight:600;margin-bottom:20px;}
+.tv-timer{
+  font-family:'Fredoka One',cursive;font-size:64px;letter-spacing:2px;
+  line-height:1;margin:8px 0;
+}
+.tc-green{color:var(--teal);}
+.tc-yellow{color:var(--yellow);}
+.tc-red{color:var(--coral);}
+.tv-status{font-size:14px;font-weight:700;margin-top:12px;padding:6px 16px;border-radius:20px;display:inline-block;}
+.tv-status.s-run{background:rgba(6,214,160,.15);color:var(--teal);}
+.tv-status.s-warn{background:rgba(255,209,102,.15);color:var(--yellow);}
+.tv-status.s-exp{background:rgba(255,92,92,.15);color:var(--coral);}
+
+/* EMPTY */
+.tv-empty{
+  text-align:center;padding:80px 20px;color:var(--text-muted);
+  grid-column:1/-1;
+}
+.tv-empty-icon{font-size:80px;display:block;margin-bottom:16px;}
+.tv-empty-text{font-family:'Fredoka One',cursive;font-size:28px;color:var(--text-muted);}
+
+/* FOOTER */
+.tv-footer{
+  text-align:center;padding:16px;
+  font-size:12px;color:rgba(240,240,240,.2);font-weight:600;
+  border-top:1px solid rgba(255,255,255,.05);margin-top:20px;
+}
+
+/* BAĞLANTI */
+.conn-badge{
+  position:fixed;bottom:16px;right:16px;
+  padding:6px 14px;border-radius:20px;font-size:11px;font-weight:700;
+  display:flex;align-items:center;gap:5px;
+  background:rgba(6,214,160,.15);border:1px solid rgba(6,214,160,.3);color:var(--teal);
+  transition:all .3s;
+}
+.conn-badge.offline{background:rgba(255,92,92,.15);border-color:rgba(255,92,92,.3);color:var(--coral);}
+.conn-dot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:blink 1.2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="tv-header">
+  <div>
+    <div class="tv-logo">🌙 Luna Cafe Kids</div>
+    <div class="tv-logo-sub">Oyun Alanı</div>
+  </div>
+  <div class="tv-clock-wrap">
+    <div class="tv-clock" id="tvClock">--:--</div>
+    <div class="tv-date" id="tvDate"></div>
+  </div>
+  <div>
+    <div class="tv-count" id="tvCount">0</div>
+    <div class="tv-count-sub">aktif çocuk</div>
+  </div>
+</div>
+
+<!-- GRID -->
+<div class="tv-body">
+  <div class="tv-grid" id="tvGrid">
+    <div class="tv-empty">
+      <span class="tv-empty-icon">🎪</span>
+      <div class="tv-empty-text">Oyun alanı boş</div>
+    </div>
+  </div>
+</div>
+
+<div class="tv-footer">© 2025 Karaca Yazılım · Luna Cafe Kids</div>
+
+<!-- BAĞLANTI GÖSTERGESI -->
+<div class="conn-badge" id="connBadge">
+  <div class="conn-dot"></div>
+  <span id="connText">Bağlanıyor...</span>
+</div>
+
+<script>
+let children = [];
+
+// ══ SOCKET ══
+const socket = io();
+const connBadge = document.getElementById('connBadge');
+
+socket.on('connect', () => {
+  connBadge.className = 'conn-badge';
+  document.getElementById('connText').textContent = 'Canlı';
+  loadChildren();
+});
+socket.on('disconnect', () => {
+  connBadge.className = 'conn-badge offline';
+  document.getElementById('connText').textContent = 'Bağlantı Kesildi';
+});
+
+socket.on('children:update', () => loadChildren());
+
+socket.on('timer:tick', (ticks) => {
+  ticks.forEach(t => {
+    const c = children.find(x => x._id?.toString() === t.id?.toString());
+    if (c) { c.remaining = t.remaining; c.status = t.status; }
+  });
+  updateDisplays();
+  updateCount();
+});
+
+socket.on('timer:alert', (alert) => {
+  if (alert.type === 'expired') playBell();
+});
+
+// ══ API ══
+async function loadChildren() {
+  const res = await fetch('/api/children');
+  children = await res.json();
+  renderGrid();
+  updateCount();
+}
+
+// ══ RENDER ══
+function renderGrid() {
+  const active = children.filter(c => c.status !== 'paid');
+  const grid = document.getElementById('tvGrid');
+
+  if (!active.length) {
+    grid.innerHTML = `<div class="tv-empty"><span class="tv-empty-icon">🎪</span><div class="tv-empty-text">Oyun alanı boş</div></div>`;
+    return;
+  }
+
+  grid.innerHTML = active.map(c => tvCard(c)).join('');
+}
+
+function tvCard(c) {
+  const mins = Math.floor(c.remaining / 60);
+  const secs = c.remaining % 60;
+  const timeStr = c.status === 'expired' ? 'BİTTİ' :
+    String(mins).padStart(2,'0') + ':' + String(secs).padStart(2,'0');
+  const tc = c.status === 'expired' ? 'tc-red' : c.status === 'warning' ? 'tc-yellow' : 'tc-green';
+  const statusTxt = c.status === 'expired' ? '🔔 Süre Doldu' : c.status === 'warning' ? '⚠️ Son 5 Dakika' : '🟢 Oynuyor';
+  const statusCls = c.status === 'expired' ? 's-exp' : c.status === 'warning' ? 's-warn' : 's-run';
+  const id = c._id?.toString();
+
+  return `
+    <div class="tv-card ${c.status}" id="tvc-${id}">
+      <div class="tv-card-name">${c.fullName}</div>
+      <div class="tv-card-dur">⏱ ${c.duration} dakika</div>
+      <div class="tv-timer ${tc}" id="tvt-${id}">${timeStr}</div>
+      <div class="tv-status ${statusCls}">${statusTxt}</div>
+    </div>`;
+}
+
+function updateDisplays() {
+  children.forEach(c => {
+    if (c.status === 'paid') return;
+    const id = c._id?.toString();
+    const el = document.getElementById('tvt-' + id);
+    const card = document.getElementById('tvc-' + id);
+    if (!el) return;
+
+    if (c.status === 'expired') {
+      el.textContent = 'BİTTİ';
+      el.className = 'tv-timer tc-red';
+      if (card) { card.className = 'tv-card expired'; }
+      return;
+    }
+    const mins = Math.floor(c.remaining / 60);
+    const secs = c.remaining % 60;
+    el.textContent = String(mins).padStart(2,'0') + ':' + String(secs).padStart(2,'0');
+    el.className = 'tv-timer ' + (c.status === 'warning' ? 'tc-yellow' : 'tc-green');
+    if (card) card.className = 'tv-card ' + c.status;
+  });
+}
+
+function updateCount() {
+  const n = children.filter(c => c.status !== 'paid').length;
+  document.getElementById('tvCount').textContent = n;
+}
+
+// ══ SAAT ══
+function updateClock() {
+  const now = new Date();
+  document.getElementById('tvClock').textContent =
+    now.toLocaleTimeString('tr-TR', { hour:'2-digit', minute:'2-digit' });
+  document.getElementById('tvDate').textContent =
+    now.toLocaleDateString('tr-TR', { weekday:'long', day:'numeric', month:'long' });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ══ ZİL ══
+function playBell() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [[523,0],[659,.18],[784,.36],[1047,.54],[784,.72],[523,.9]].forEach(([freq,t]) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = freq; o.type = 'triangle';
+      g.gain.setValueAtTime(.3, ctx.currentTime + t);
+      g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + t + .5);
+      o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + .6);
+    });
+  } catch(e) {}
+}
+
+// Her 5 sn yenile (yedek)
+setInterval(loadChildren, 5000);
+</script>
+</body>
+</html>
