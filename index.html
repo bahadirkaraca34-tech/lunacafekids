@@ -685,6 +685,23 @@ body{font-family:'Poppins',sans-serif;background:var(--dark);color:var(--text);m
 
 <div class="toast" id="toast"></div>
 
+<!-- Menü Modal (body level - tüm sayfalardan erişilebilir) -->
+<div class="menu-overlay" id="menuOverlay">
+  <div class="menu-modal">
+    <div class="menu-header">
+      <div class="menu-header-title">
+        <div>
+          <div class="menu-child-name" id="menuChildName">—</div>
+          <div class="menu-subtitle" id="menuSubtitle">Hesaba ürün ekle</div>
+        </div>
+      </div>
+      <button class="menu-close" onclick="closeMenuModal()">✕</button>
+    </div>
+    <div class="menu-cats" id="menuCats"></div>
+    <div class="menu-items" id="menuItems"></div>
+  </div>
+</div>
+
 <!-- ══ PAGE 1: GİRİŞ ══ -->
 <div class="page active" id="p1">
   <div class="sec-title">🧒 Yeni Kayıt</div>
@@ -721,23 +738,6 @@ body{font-family:'Poppins',sans-serif;background:var(--dark);color:var(--text);m
       </div>
     </div>
     <button class="btn-start" onclick="addChild()">▶ Başla</button>
-  </div>
-
-  <!-- Menü Modal -->
-  <div class="menu-overlay" id="menuOverlay">
-    <div class="menu-modal">
-      <div class="menu-header">
-        <div class="menu-header-title">
-          <div>
-            <div class="menu-child-name" id="menuChildName">—</div>
-            <div class="menu-subtitle" id="menuSubtitle">Hesaba ürün ekle</div>
-          </div>
-        </div>
-        <button class="menu-close" onclick="closeMenuModal()">✕</button>
-      </div>
-      <div class="menu-cats" id="menuCats"></div>
-      <div class="menu-items" id="menuItems"></div>
-    </div>
   </div>
 
   <div class="sec-title">🎡 Aktif Çocuklar</div>
@@ -1108,6 +1108,7 @@ async function addProdFromMenu(name,price){
   // Masa modu
   if (window._tableMenuMode) {
     await addProdToTable(name, price);
+    closeMenuModal();
     return;
   }
   if(!selectedId){toast('Önce bir çocuk seçin');return;}
