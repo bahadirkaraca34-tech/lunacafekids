@@ -677,6 +677,7 @@ body{font-family:'Poppins',sans-serif;background:var(--dark);color:var(--text);m
   <button class="nav-tab" id="tab3" onclick="goPage(3)">📊 Rapor</button>
   <button class="nav-tab" id="tab5" onclick="goPage(5)">👥 Kullanıcılar</button>
   <button class="nav-tab" id="tab6" onclick="goPage(6)">📅 Oyun Grupları</button>
+  <button class="nav-tab" id="tab7" onclick="goPage(7)">⚙️ Ayarlar</button>
   <div class="live-badge">
     <div class="live-dot"></div>
     <span id="navCount">0 çocuk</span>
@@ -693,6 +694,7 @@ body{font-family:'Poppins',sans-serif;background:var(--dark);color:var(--text);m
     <button class="bnav-btn" id="btab4" onclick="goPage(4)"><span class="bico">☕</span>Masalar</button>
     <button class="bnav-btn" id="btab3" onclick="goPage(3)"><span class="bico">📊</span>Rapor</button>
     <button class="bnav-btn" id="btab6" onclick="goPage(6)"><span class="bico">📅</span>Gruplar</button>
+    <button class="bnav-btn" id="btab7" onclick="goPage(7)"><span class="bico">⚙️</span>Ayarlar</button>
   </div>
 </nav>
 
@@ -767,18 +769,8 @@ body{font-family:'Poppins',sans-serif;background:var(--dark);color:var(--text);m
     </div>
     <div class="tv-active" id="tvActiveCount">0 çocuk</div>
   </div>
-
-  <!-- Tablo başlığı -->
-  <div style="padding:0 14px;margin-top:14px;">
-    <div style="display:grid;grid-template-columns:1fr 100px 100px 120px;gap:8px;padding:8px 16px;background:rgba(255,255,255,.04);border-radius:10px;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;">
-      <div>Çocuk</div>
-      <div style="text-align:center;">Giriş</div>
-      <div style="text-align:center;">Çıkış</div>
-      <div style="text-align:center;">Durum</div>
-    </div>
-    <div id="tvGrid">
-      <div class="empty-state"><span class="ei">🎪</span><p>Henüz kimse yok</p></div>
-    </div>
+  <div class="timer-list" id="tvGrid">
+    <div class="empty-state" style="grid-column:1/-1"><span class="ei">🎪</span><p>Henüz kimse yok</p></div>
   </div>
 </div>
 
@@ -987,6 +979,39 @@ body{font-family:'Poppins',sans-serif;background:var(--dark);color:var(--text);m
   </div>
 </div>
 
+<!-- ══ PAGE 7: AYARLAR ══ -->
+<div class="page" id="p7">
+  <div class="sec-title">⚙️ Fiyat Ayarları</div>
+  <div class="glass" style="margin-bottom:16px;">
+    <div style="font-size:13px;font-weight:700;color:var(--yellow);margin-bottom:16px;">🎠 Oyun Alanı Ücretleri</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+      <div class="fg">
+        <label>30 Dakika (₺)</label>
+        <input class="inp" id="set30" type="number" placeholder="150"/>
+      </div>
+      <div class="fg">
+        <label>60 Dakika (₺)</label>
+        <input class="inp" id="set60" type="number" placeholder="250"/>
+      </div>
+      <div class="fg">
+        <label>Ek Sure 30 dk (₺)</label>
+        <input class="inp" id="setEk30" type="number" placeholder="100"/>
+      </div>
+      <div class="fg">
+        <label>Ek Sure 60 dk (₺)</label>
+        <input class="inp" id="setEk60" type="number" placeholder="250"/>
+      </div>
+    </div>
+    <button class="btn-start" onclick="savePrices()">💾 Fiyatları Kaydet</button>
+  </div>
+
+  <div class="sec-title">🍽️ Menü Fiyatları</div>
+  <div class="glass">
+    <div id="menuPriceList"></div>
+    <button class="btn-start" style="margin-top:12px;" onclick="saveMenuPrices()">💾 Menü Fiyatlarını Kaydet</button>
+  </div>
+</div>
+
 <div class="gunsonu-overlay" id="gunsonuOverlay">
   <div class="gunsonu-modal">
     <div class="gunsonu-top">
@@ -1097,9 +1122,9 @@ const MENU = [
     {name:'Antep Fıstığı-Çikolata',price:70},{name:'Profiterol',price:70},
     {name:'Fındık & Karamelize Beyaz Çikolatalı',price:70},
   ]},
-  { icon:'⏱', catName:'Ek Süre', items:[
-    {name:'Ek Süre 30 dk',price:150},
-    {name:'Ek Süre 60 dk',price:250},
+  { icon:'⏱', catName:'Ek Sure', items:[
+    {name:'Ek Sure 30 dk',price:100},
+    {name:'Ek Sure 60 dk',price:250},
   ]},
   { icon:'🥪', catName:'Atıştırmalık', items:[
     {name:'Patates Tabağı Normal',price:100},{name:'Patates Tabağı Double',price:120},
@@ -1163,7 +1188,7 @@ async function loadAll(){
 
 // ══ NAV ══
 function goPage(n){
-  [1,2,3,4,5,6].forEach(i=>{
+  [1,2,3,4,5,6,7].forEach(i=>{
     document.getElementById('p'+i)?.classList.toggle('active',i===n);
     document.getElementById('tab'+i)?.classList.toggle('active',i===n);
     document.getElementById('btab'+i)?.classList.toggle('active',i===n);
@@ -1173,6 +1198,7 @@ function goPage(n){
   if(n===4){loadTables();}
   if(n===5){loadUsers();}
   if(n===6){loadReservations();}
+  if(n===7){loadSettingsPage();}
 }
 
 // ══ GİRİŞ TİPİ ══
@@ -1264,8 +1290,8 @@ async function addProdFromMenu(name,price){
   if(!selectedId){toast('Önce bir çocuk seçin');return;}
   const c=children.find(x=>idStr(x._id)===selectedId);
   if(!c||c.status==='paid'){toast('Bu hesap kapatılmış');return;}
-  if(name==='Ek Süre 30 dk'||name==='Ek Süre 60 dk'){
-    const ekDk=name==='Ek Süre 30 dk'?30:60;
+  if(name==='Ek Sure 30 dk'||name==='Ek Sure 60 dk'){
+    const ekDk=name==='Ek Sure 30 dk'?30:60;
     const ekSn=ekDk*60;
     // Sunucudan güncel veriyi al
     const fresh = await api.get('/api/children');
@@ -1415,88 +1441,61 @@ function getRemainingFromTime(c) {
 }
 
 function renderPage2(){
-  const active = children.filter(c => c.status !== 'paid');
-  const grid = document.getElementById('tvGrid');
-  document.getElementById('tvActiveCount').textContent = active.length + ' çocuk';
-
-  if (!active.length) {
-    grid.innerHTML = '<div class="empty-state"><span class="ei">🎪</span><p>Henüz kimse yok</p></div>';
+  const active=children.filter(c=>c.status!=='paid');
+  const grid=document.getElementById('tvGrid');
+  document.getElementById('tvActiveCount').textContent=active.length+' çocuk';
+  if(!active.length){
+    grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><span class="ei">🎪</span><p>Henüz kimse yok</p></div>';
     return;
   }
-
-  grid.innerHTML = active.map(c => {
-    const cid = idStr(c._id);
-    const start = new Date(c.startedAt);
-    const exit = getExitTime(c);
-    const status = getStatus(c);
-    const remaining = getRemainingFromTime(c);
-    const mins = Math.floor(remaining / 60);
-    const secs = remaining % 60;
-
-    const girisSaat = start.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
-    const cikisSaat = exit.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
-
-    const statusColor = status === 'expired' ? 'var(--coral)' : status === 'warning' ? 'var(--yellow)' : 'var(--teal)';
-    const statusBg = status === 'expired' ? 'rgba(255,92,92,.15)' : status === 'warning' ? 'rgba(255,209,102,.15)' : 'rgba(6,214,160,.15)';
-    const statusTxt = status === 'expired' ? '🔴 Bitti' : status === 'warning' ? '⚠️ Son ' + mins + ':' + String(secs).padStart(2,'0') : '🟢 ' + String(mins).padStart(2,'0') + ':' + String(secs).padStart(2,'0');
-    const rowBg = status === 'expired' ? 'rgba(255,92,92,.07)' : status === 'warning' ? 'rgba(255,209,102,.05)' : 'rgba(255,255,255,.03)';
-    const borderColor = status === 'expired' ? 'rgba(255,92,92,.4)' : status === 'warning' ? 'rgba(255,209,102,.3)' : 'rgba(255,255,255,.08)';
-    const anim = status === 'expired' ? 'animation:pulse-red 1.5s infinite;' : status === 'warning' ? 'animation:pulse-warn 1.5s infinite;' : '';
-
-    return `<div id="tvc-${cid}" style="display:grid;grid-template-columns:1fr 100px 100px 120px;gap:8px;align-items:center;padding:12px 16px;background:${rowBg};border:1.5px solid ${borderColor};border-radius:12px;margin-bottom:8px;${anim}">
-      <div>
-        <div style="font-weight:700;font-size:15px;">${c.fullName}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">⏱ ${c.duration} dk</div>
-      </div>
-      <div style="text-align:center;font-family:'Fredoka One',cursive;font-size:18px;color:var(--text-muted);">${girisSaat}</div>
-      <div style="text-align:center;font-family:'Fredoka One',cursive;font-size:18px;color:${status==='expired'?'var(--coral)':'var(--text)'};">${cikisSaat}</div>
-      <div style="text-align:center;">
-        <span id="tvt-${cid}" style="padding:5px 10px;border-radius:20px;font-size:12px;font-weight:700;background:${statusBg};color:${statusColor};white-space:nowrap;">${statusTxt}</span>
-      </div>
-    </div>`;
+  grid.innerHTML=active.map(c=>{
+    const cid=idStr(c._id);
+    const remaining=getRemainingFromTime(c);
+    const status=getStatus(c);
+    const mins=Math.floor(remaining/60),secs=remaining%60;
+    const timeStr=status==='expired'?'Bitti':String(mins).padStart(2,'0')+':'+String(secs).padStart(2,'0');
+    const tc=status==='expired'?'tc-red':status==='warning'?'tc-yellow':'tc-green';
+    const statusTxt=status==='expired'?'Sure Doldu':status==='warning'?'Son 5 dk':'Oynuyor';
+    const statusCls=status==='expired'?'s-exp':status==='warning'?'s-warn':'s-run';
+    return `
+      <div class="tl-card ${status}" id="tvc-${cid}">
+        <div class="tl-name">${c.fullName}</div>
+        <div class="tl-dur">⏱ ${c.duration}dk</div>
+        <div class="tl-time ${tc}" id="tvt-${cid}">${timeStr}</div>
+        <div class="tl-status ${statusCls}">${statusTxt}</div>
+      </div>`;
   }).join('');
 }
 
 function updateTimerDisplays(){
-  children.forEach(c => {
-    const cid = idStr(c._id);
-    // Page 1 timer
-    const el1 = document.getElementById('tm-'+cid);
+  children.forEach(c=>{
+    const cid=idStr(c._id);
+    const remaining=getRemainingFromTime(c);
+    const status=getStatus(c);
+    const mins=Math.floor(remaining/60),secs=remaining%60;
+    // Page 1
+    const el1=document.getElementById('tm-'+cid);
     if(el1){
-      const remaining = getRemainingFromTime(c);
-      const status = getStatus(c);
       if(status==='expired'){el1.textContent='Bitti';el1.className='timer-txt tc-red';}
-      else{
-        el1.className='timer-txt '+(status==='warning'?'tc-yellow':'tc-green');
-        el1.textContent=String(Math.floor(remaining/60)).padStart(2,'0')+':'+String(remaining%60).padStart(2,'0');
-      }
+      else{el1.className='timer-txt '+(status==='warning'?'tc-yellow':'tc-green');
+        el1.textContent=String(mins).padStart(2,'0')+':'+String(secs).padStart(2,'0');}
     }
-    // Page 2 (liste)
-    const el2 = document.getElementById('tvt-'+cid);
-    const row2 = document.getElementById('tvc-'+cid);
+    // Page 2 (kart)
+    const el2=document.getElementById('tvt-'+cid);
+    const card2=document.getElementById('tvc-'+cid);
     if(el2){
-      const remaining = getRemainingFromTime(c);
-      const status = getStatus(c);
-      const mins = Math.floor(remaining/60);
-      const secs = remaining % 60;
-      const statusColor = status==='expired'?'var(--coral)':status==='warning'?'var(--yellow)':'var(--teal)';
-      const statusBg = status==='expired'?'rgba(255,92,92,.15)':status==='warning'?'rgba(255,209,102,.15)':'rgba(6,214,160,.15)';
-      const statusTxt = status==='expired'?'🔴 Bitti':status==='warning'?'⚠️ Son '+String(mins).padStart(2,'0')+':'+String(secs).padStart(2,'0'):'🟢 '+String(mins).padStart(2,'0')+':'+String(secs).padStart(2,'0');
-      el2.textContent = statusTxt;
-      el2.style.background = statusBg;
-      el2.style.color = statusColor;
-      if(row2){
-        const rowBg = status==='expired'?'rgba(255,92,92,.07)':status==='warning'?'rgba(255,209,102,.05)':'rgba(255,255,255,.03)';
-        const borderColor = status==='expired'?'rgba(255,92,92,.4)':status==='warning'?'rgba(255,209,102,.3)':'rgba(255,255,255,.08)';
-        row2.style.background = rowBg;
-        row2.style.borderColor = borderColor;
-      }
-      // Alert
-      if(status==='expired' && c.status!=='expired'){
+      if(status==='expired'){el2.textContent='Bitti';el2.className='tl-time tc-red';}
+      else{el2.className='tl-time '+(status==='warning'?'tc-yellow':'tc-green');
+        el2.textContent=String(mins).padStart(2,'0')+':'+String(secs).padStart(2,'0');}
+      if(card2) card2.className='tl-card '+status;
+      // Alert sadece bir kez
+      if(status==='expired' && c._prevStatus!=='expired'){
+        c._prevStatus='expired';
         playBell();
         speak(`${c.firstName}, süren doldu! Lütfen çıkış yapınız.`);
         toast(`🔔 ${c.fullName} — SÜRE BİTTİ!`);
       }
+      c._prevStatus=status;
     }
   });
 }
@@ -2012,7 +2011,63 @@ async function clearTable() {
   toast(`🗑 Masa ${activeTableNo} temizlendi`);
 }
 
-// ══ KULLANICI YÖNETİMİ ══
+// ══ AYARLAR ══
+function loadSettingsPage(){
+  document.getElementById('set30').value = PRICES[30];
+  document.getElementById('set60').value = PRICES[60];
+  // Menü fiyatlarından ek sure bul
+  const ek = MENU.find(c=>c.catName==='Ek Sure');
+  if(ek){
+    document.getElementById('setEk30').value = ek.items.find(i=>i.name.includes('30'))?.price||100;
+    document.getElementById('setEk60').value = ek.items.find(i=>i.name.includes('60'))?.price||250;
+  }
+  renderMenuPriceList();
+}
+
+function renderMenuPriceList(){
+  const el = document.getElementById('menuPriceList');
+  el.innerHTML = MENU.filter(c=>c.catName!=='Ek Sure').map((cat,ci)=>`
+    <div style="margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:700;color:var(--yellow);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;">${cat.icon} ${cat.catName}</div>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;">
+        ${cat.items.map((item,ii)=>`
+          <div style="font-size:13px;font-weight:600;">${item.name}</div>
+          <input class="inp" type="number" value="${item.price}" id="mp_${ci}_${ii}" style="width:90px;padding:8px 10px;font-size:13px;"/>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function savePrices(){
+  const p30 = parseInt(document.getElementById('set30').value)||150;
+  const p60 = parseInt(document.getElementById('set60').value)||250;
+  const ek30 = parseInt(document.getElementById('setEk30').value)||100;
+  const ek60 = parseInt(document.getElementById('setEk60').value)||250;
+  PRICES[30] = p30;
+  PRICES[60] = p60;
+  // Ek sure güncelle
+  const ek = MENU.find(c=>c.catName==='Ek Sure');
+  if(ek){
+    ek.items.find(i=>i.name.includes('30')).price = ek30;
+    ek.items.find(i=>i.name.includes('60')).price = ek60;
+  }
+  // Butonları güncelle
+  document.getElementById('d30').innerHTML = `⏱ 30 dk<span class="dur-price">${p30} ₺</span>`;
+  document.getElementById('d60').innerHTML = `⏱ 60 dk<span class="dur-price">${p60} ₺</span>`;
+  toast('✅ Fiyatlar güncellendi!');
+}
+
+function saveMenuPrices(){
+  MENU.filter(c=>c.catName!=='Ek Sure').forEach((cat,ci)=>{
+    cat.items.forEach((item,ii)=>{
+      const el = document.getElementById(`mp_${ci}_${ii}`);
+      if(el) item.price = parseInt(el.value)||item.price;
+    });
+  });
+  buildMenuCats();
+  toast('✅ Menü fiyatları güncellendi!');
+}
 let users = [];
 async function loadUsers() {
   users = await api.get('/api/users');
