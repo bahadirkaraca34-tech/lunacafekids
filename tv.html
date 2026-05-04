@@ -174,20 +174,34 @@ function tvLogin() {
 // ══ TV INIT ══
 let children = [];
 let socket;
+let reconnectTimer = null;
 
 function initTV() {
-  socket = io();
+  socket = io({
+    reconnection: true,
+    reconnectionDelay: 2000,
+    reconnectionAttempts: Infinity,
+    timeout: 10000,
+  });
+
   const connBadge = document.getElementById('connBadge');
+
   socket.on('connect', () => {
     connBadge.className = 'conn-badge';
     document.getElementById('connText').textContent = 'Canlı';
+    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
     loadChildren();
   });
+
   socket.on('disconnect', () => {
     connBadge.className = 'conn-badge offline';
-    document.getElementById('connText').textContent = 'Bağlantı Kesildi';
+    document.getElementById('connText').textContent = 'Yeniden Bağlanıyor...';
+    // 30 sn sonra sayfayı yenile
+    reconnectTimer = setTimeout(() => location.reload(), 30000);
   });
+
   socket.on('children:update', () => loadChildren());
+
   socket.on('timer:tick', (ticks) => {
     ticks.forEach(t => {
       const c = children.find(x => x._id?.toString() === t.id?.toString());
@@ -196,10 +210,18 @@ function initTV() {
     updateDisplays();
     updateCount();
   });
+
   socket.on('timer:alert', (alert) => {
     if (alert.type === 'expired') playBell();
   });
-  setInterval(loadChildren, 5000);
+
+  // Her 10 sn'de veri yenile (yedek)
+  setInterval(loadChildren, 10000);
+
+  // Her 25 sn'de sunucuya ping at (Render'ı uyanık tut)
+  setInterval(() => {
+    fetch('/api/children').catch(()=>{});
+  }, 25000);
 }
 
 async function loadChildren() {
