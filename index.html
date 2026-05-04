@@ -888,30 +888,40 @@ body{font-family:'Poppins',sans-serif;background:var(--dark);color:var(--text);m
 <!-- ══ PAGE 6: OYUN GRUPLARI ══ -->
 <div class="page" id="p6">
   <div class="sec-title">📅 Oyun Grupları & Rezervasyonlar</div>
+
+  <!-- YENİ REZERVASYON -->
   <div class="glass" style="margin-bottom:16px;">
     <div style="font-size:13px;font-weight:700;color:var(--yellow);margin-bottom:12px;">➕ Yeni Rezervasyon</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
       <div class="fg"><label>Veli Adı Soyadı</label><input class="inp" id="rParent" placeholder="Ayşe Yılmaz" type="text" autocomplete="off"/></div>
       <div class="fg"><label>Telefon</label><input class="inp" id="rPhone" placeholder="05XX XXX XX XX" type="tel"/></div>
-      <div class="fg"><label>Çocuk Adı Soyadı</label><input class="inp" id="rChild" placeholder="Ali Yılmaz" type="text" autocomplete="off"/></div>
-      <div class="fg"><label>Geliş Tarihi</label><input class="inp" id="rDate" type="date"/></div>
-      <div class="fg"><label>Süre</label>
-        <select class="inp" id="rDuration" style="-webkit-appearance:auto;">
-          <option value="30">30 dakika - 150₺</option>
-          <option value="60">60 dakika - 250₺</option>
-        </select>
-      </div>
-      <div class="fg"><label>Not</label><input class="inp" id="rNote" placeholder="Opsiyonel..." type="text"/></div>
+      <div class="fg" style="grid-column:1/-1"><label>Çocuk Adı Soyadı</label><input class="inp" id="rChild" placeholder="Ali Yılmaz" type="text" autocomplete="off"/></div>
+      <div class="fg" style="grid-column:1/-1"><label>Not (Opsiyonel)</label><input class="inp" id="rNote" placeholder="Notunuz..." type="text"/></div>
+    </div>
+    <div style="margin-top:10px;">
+      <label style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:8px;">Geliş Günü Seçin</label>
+      <div id="rDayPicker" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
     </div>
     <button class="btn-start" style="margin-top:12px;" onclick="addReservation()">📅 Rezervasyon Ekle</button>
   </div>
-  <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
-    <button class="dur-btn sel" id="rfAll" onclick="filterResv('all')" style="flex:0;padding:8px 14px;font-size:12px;">Tümü</button>
-    <button class="dur-btn" id="rfToday" onclick="filterResv('today')" style="flex:0;padding:8px 14px;font-size:12px;">Bugün</button>
-    <button class="dur-btn" id="rfWeek" onclick="filterResv('week')" style="flex:0;padding:8px 14px;font-size:12px;">Bu Hafta</button>
-    <button class="dur-btn" id="rfWait" onclick="filterResv('bekliyor')" style="flex:0;padding:8px 14px;font-size:12px;">Bekleyenler</button>
+
+  <!-- AY SEÇİMİ -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+    <button onclick="changeMonth(-1)" style="padding:8px 14px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:var(--text);font-size:16px;cursor:pointer;">‹</button>
+    <div style="font-family:'Fredoka One',cursive;font-size:20px;color:var(--yellow);" id="monthLabel">Mayıs 2026</div>
+    <button onclick="changeMonth(1)" style="padding:8px 14px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:var(--text);font-size:16px;cursor:pointer;">›</button>
   </div>
-  <div id="resvList"></div>
+
+  <!-- TAKVİM (Pazartesi-Cuma) -->
+  <div id="weekCalendar"></div>
+
+  <!-- DETAY POPUP -->
+  <div id="resvPopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:2000;align-items:center;justify-content:center;">
+    <div style="background:linear-gradient(160deg,#1e1e38,#141428);border:1.5px solid rgba(255,255,255,.1);border-radius:20px;padding:24px;max-width:360px;width:90%;position:relative;">
+      <button onclick="closeResvPopup()" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,.1);border:none;border-radius:50%;width:32px;height:32px;color:var(--text);font-size:16px;cursor:pointer;">✕</button>
+      <div id="resvPopupContent"></div>
+    </div>
+  </div>
 </div>
 
 <div class="gunsonu-overlay" id="gunsonuOverlay">
@@ -1193,11 +1203,17 @@ async function addProdFromMenu(name,price){
   if(name==='Ek Süre 30 dk'||name==='Ek Süre 60 dk'){
     const ekDk=name==='Ek Süre 30 dk'?30:60;
     const ekSn=ekDk*60;
+    // Sunucudan güncel veriyi al
+    const fresh = await api.get('/api/children');
+    const freshChild = fresh.find(x=>idStr(x._id)===idStr(c._id));
+    const curRemaining = freshChild ? freshChild.remaining : c.remaining;
+    const curTotalSec = freshChild ? freshChild.totalSec : c.totalSec;
+    const curDuration = freshChild ? freshChild.duration : c.duration;
     await api.put(`/api/children/${c._id}`,{
       products:[...c.products,{name,price}],
-      remaining:c.remaining+ekSn,
-      totalSec:c.totalSec+ekSn,
-      duration:c.duration+ekDk,
+      remaining: curRemaining + ekSn,
+      totalSec: curTotalSec + ekSn,
+      duration: curDuration + ekDk,
       status:'running',
     });
     toast(`⏱ ${ekDk} dk ek süre eklendi!`);
@@ -1825,8 +1841,18 @@ function openTableMenu() {
   window._tableMenuNo = activeTableNo;
   document.getElementById('menuChildName').textContent = `☕ Masa ${activeTableNo}`;
   document.getElementById('menuSubtitle').textContent = 'Masaya ürün ekle';
-  showMenuCats();
-  document.getElementById('menuOverlay').classList.add('open');
+  // Ek süre olmadan menü kategorileri
+  const container = document.getElementById('menuCats');
+  container.innerHTML = MENU.filter(c=>c.catName!=='Ek Süre').map((cat)=>{
+    const i = MENU.indexOf(cat);
+    return `<div class="menu-cat-btn" onclick="showMenuItems(${i})">
+      <div class="menu-cat-icon">${cat.icon}</div>
+      <div class="menu-cat-name">${cat.catName}</div>
+    </div>`;
+  }).join('');
+  container.style.display='';
+  document.getElementById('menuItems').classList.remove('active');
+  setTimeout(()=>document.getElementById('menuOverlay').classList.add('open'),50);
 }
 
 async function addProdToTable(name, price) {
@@ -1927,83 +1953,157 @@ async function deleteUser(id) {
   toast('🗑 Kullanıcı silindi');
 }
 
-// ══ REZERVASYONLAR ══
+// ══ REZERVASYONLAR — TAKVİM SİSTEMİ ══
 let reservations = [];
-let resvFilter = 'all';
+let calMonth = new Date().getMonth();
+let calYear  = new Date().getFullYear();
+let selectedDay = null; // "2026-05-12"
+
+const DAYS_TR = ['Pazartesi','Salı','Çarşamba','Perşembe','Cuma'];
+const MONTHS_TR = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 
 async function loadReservations() {
   reservations = await api.get('/api/reservations');
-  renderReservations();
+  renderDayPicker();
+  renderCalendar();
 }
 
-function filterResv(f) {
-  resvFilter = f;
-  ['All','Today','Week','Wait'].forEach(x=>{
-    const el = document.getElementById('rf'+x);
-    if (el) el.classList.toggle('sel', 'rf'+x === 'rf'+f.charAt(0).toUpperCase()+f.slice(1) || (f==='all'&&x==='All'));
-  });
-  renderReservations();
+function changeMonth(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0)  { calMonth = 11; calYear--; }
+  selectedDay = null;
+  renderDayPicker();
+  renderCalendar();
 }
 
-function renderReservations() {
-  const today = new Date().toISOString().split('T')[0];
-  const weekEnd = new Date(Date.now()+7*86400000).toISOString().split('T')[0];
+// Seçilen ay için Pzt-Cum günlerini bul
+function getWeekdaysOfMonth(year, month) {
+  const days = [];
+  const d = new Date(year, month, 1);
+  while (d.getMonth() === month) {
+    const dow = d.getDay(); // 0=Pazar,1=Pzt,...,5=Cuma
+    if (dow >= 1 && dow <= 5) {
+      days.push({
+        date: `${year}-${String(month+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,
+        dayName: DAYS_TR[dow-1],
+        dayNum: d.getDate(),
+      });
+    }
+    d.setDate(d.getDate()+1);
+  }
+  return days;
+}
 
-  let filtered = reservations;
-  if (resvFilter==='today') filtered = reservations.filter(r=>r.date===today);
-  else if (resvFilter==='week') filtered = reservations.filter(r=>r.date>=today&&r.date<=weekEnd);
-  else if (resvFilter==='bekliyor') filtered = reservations.filter(r=>r.status==='bekliyor');
-
-  const el = document.getElementById('resvList');
-  if (!filtered.length) { el.innerHTML='<div class="empty-state"><span class="ei">📅</span><p>Rezervasyon bulunamadı</p></div>'; return; }
-
-  // Tarihe göre grupla
-  const groups = {};
-  filtered.forEach(r=>{
-    if (!groups[r.date]) groups[r.date]=[];
-    groups[r.date].push(r);
-  });
-
-  el.innerHTML = Object.entries(groups).sort(([a],[b])=>a.localeCompare(b)).map(([date,items])=>`
-    <div style="margin-bottom:20px;">
-      <div style="font-family:'Fredoka One',cursive;font-size:16px;color:var(--yellow);margin-bottom:10px;">
-        📅 ${new Date(date+'T12:00:00').toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
-        <span style="font-size:13px;color:var(--text-muted);font-weight:600;margin-left:8px;">${items.length} rezervasyon</span>
-      </div>
-      ${items.map(r=>`
-        <div class="child-card" style="cursor:default;grid-template-columns:auto 1fr auto;margin-bottom:8px;">
-          <div style="font-size:20px;">${r.status==='geldi'?'✅':r.status==='iptal'?'❌':'⏳'}</div>
-          <div>
-            <div class="child-name-text">👶 ${r.childName}</div>
-            <div class="child-sub">👨‍👩‍👧 ${r.parentName} · 📞 ${r.parentPhone}</div>
-            <div class="child-sub">⏱ ${r.duration} dk${r.note?` · 📝 ${r.note}`:''}</div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">
-            <span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:${r.status==='geldi'?'rgba(6,214,160,.15)':r.status==='iptal'?'rgba(255,92,92,.15)':'rgba(255,209,102,.15)'};color:${r.status==='geldi'?'var(--teal)':r.status==='iptal'?'var(--coral)':'var(--yellow)'};">${r.status}</span>
-            <div style="display:flex;gap:4px;">
-              <button onclick="updateResv('${r._id}','geldi')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(6,214,160,.15);border:1px solid rgba(6,214,160,.3);color:var(--teal);cursor:pointer;">✅ Geldi</button>
-              <button onclick="updateResv('${r._id}','iptal')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(255,92,92,.15);border:1px solid rgba(255,92,92,.3);color:var(--coral);cursor:pointer;">❌ İptal</button>
-              <button onclick="deleteResv('${r._id}')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:var(--text-muted);cursor:pointer;">🗑</button>
-            </div>
-          </div>
-        </div>
-      `).join('')}
-    </div>
+function renderDayPicker() {
+  const el = document.getElementById('rDayPicker');
+  if (!el) return;
+  const days = DAYS_TR;
+  el.innerHTML = days.map(d=>`
+    <button class="dur-btn ${selectedDay && getDayName(selectedDay)===d ? 'sel' : ''}"
+      onclick="selectDayByName('${d}')"
+      style="flex:0;padding:8px 14px;font-size:12px;">
+      ${d}
+    </button>
   `).join('');
 }
 
+function getDayName(dateStr) {
+  const d = new Date(dateStr+'T12:00:00');
+  return DAYS_TR[d.getDay()-1] || '';
+}
+
+function selectDayByName(dayName) {
+  // O ayın bu gün adına sahip ilk tarihini seç
+  const days = getWeekdaysOfMonth(calYear, calMonth);
+  const found = days.find(d=>d.dayName===dayName);
+  if (found) { selectedDay = found.date; renderDayPicker(); }
+}
+
+function renderCalendar() {
+  const el = document.getElementById('weekCalendar');
+  if (!el) return;
+  document.getElementById('monthLabel').textContent = `${MONTHS_TR[calMonth]} ${calYear}`;
+
+  // O aydaki Pzt-Cum günlerini grupla (gün adına göre)
+  const allDays = getWeekdaysOfMonth(calYear, calMonth);
+  const grouped = {};
+  DAYS_TR.forEach(d=>grouped[d]=[]);
+  allDays.forEach(d=>grouped[d.dayName].push(d));
+
+  el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;">
+    ${DAYS_TR.map(dayName=>{
+      const dayDates = grouped[dayName];
+      // Bu gün adına ait tüm rezervasyonlar
+      const dayResv = reservations.filter(r=>getDayName(r.date)===dayName && new Date(r.date+'T12:00:00').getMonth()===calMonth && new Date(r.date+'T12:00:00').getFullYear()===calYear);
+
+      return `<div style="background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden;">
+        <div style="background:rgba(255,209,102,.1);border-bottom:1px solid rgba(255,209,102,.2);padding:8px 12px;font-family:'Fredoka One',cursive;font-size:14px;color:var(--yellow);">
+          ${dayName}
+          <span style="font-size:11px;color:var(--text-muted);font-weight:600;float:right;">${dayResv.length} kişi</span>
+        </div>
+        <div style="padding:8px;min-height:60px;">
+          ${dayResv.length===0 ? '<div style="color:var(--text-muted);font-size:11px;text-align:center;padding:10px 0;">Boş</div>' :
+            dayResv.map(r=>`
+              <div onclick="showResvPopup('${r._id}')"
+                style="padding:6px 8px;margin-bottom:5px;border-radius:8px;cursor:pointer;
+                background:${r.status==='geldi'?'rgba(6,214,160,.1)':r.status==='iptal'?'rgba(255,92,92,.1)':'rgba(255,209,102,.08)'};
+                border:1px solid ${r.status==='geldi'?'rgba(6,214,160,.3)':r.status==='iptal'?'rgba(255,92,92,.3)':'rgba(255,209,102,.2)'};
+                transition:all .2s;">
+                <div style="font-size:12px;font-weight:700;color:var(--text);">👶 ${r.childName}</div>
+                <div style="font-size:10px;color:var(--text-muted);margin-top:1px;">${new Date(r.date+'T12:00:00').getDate()} ${MONTHS_TR[new Date(r.date+'T12:00:00').getMonth()]}</div>
+              </div>
+            `).join('')
+          }
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function showResvPopup(id) {
+  const r = reservations.find(x=>x._id===id);
+  if (!r) return;
+  const dayLabel = new Date(r.date+'T12:00:00').toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('resvPopupContent').innerHTML = `
+    <div style="font-family:'Fredoka One',cursive;font-size:20px;color:var(--yellow);margin-bottom:16px;">📅 Rezervasyon Detayı</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+      <div style="font-size:15px;font-weight:700;">👶 ${r.childName}</div>
+      <div style="font-size:13px;color:var(--text-muted);">👨‍👩‍👧 Veli: <span style="color:var(--text);font-weight:600;">${r.parentName}</span></div>
+      <div style="font-size:13px;color:var(--text-muted);">📞 Telefon: <span style="color:var(--text);font-weight:600;">${r.parentPhone||'—'}</span></div>
+      <div style="font-size:13px;color:var(--text-muted);">📅 Tarih: <span style="color:var(--text);font-weight:600;">${dayLabel}</span></div>
+      ${r.note?`<div style="font-size:13px;color:var(--text-muted);">📝 Not: <span style="color:var(--text);font-weight:600;">${r.note}</span></div>`:''}
+      <div style="margin-top:4px;">
+        <span style="padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;
+          background:${r.status==='geldi'?'rgba(6,214,160,.15)':r.status==='iptal'?'rgba(255,92,92,.15)':'rgba(255,209,102,.15)'};
+          color:${r.status==='geldi'?'var(--teal)':r.status==='iptal'?'var(--coral)':'var(--yellow)'};">
+          ${r.status==='geldi'?'✅ Geldi':r.status==='iptal'?'❌ İptal':'⏳ Bekliyor'}
+        </span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button onclick="updateResv('${r._id}','geldi');closeResvPopup()" style="flex:1;padding:10px;border-radius:10px;font-size:13px;font-weight:700;background:rgba(6,214,160,.15);border:1px solid rgba(6,214,160,.3);color:var(--teal);cursor:pointer;">✅ Geldi</button>
+      <button onclick="updateResv('${r._id}','bekliyor');closeResvPopup()" style="flex:1;padding:10px;border-radius:10px;font-size:13px;font-weight:700;background:rgba(255,209,102,.15);border:1px solid rgba(255,209,102,.3);color:var(--yellow);cursor:pointer;">⏳ Bekliyor</button>
+      <button onclick="updateResv('${r._id}','iptal');closeResvPopup()" style="flex:1;padding:10px;border-radius:10px;font-size:13px;font-weight:700;background:rgba(255,92,92,.15);border:1px solid rgba(255,92,92,.3);color:var(--coral);cursor:pointer;">❌ İptal</button>
+    </div>
+    <button onclick="deleteResv('${r._id}');closeResvPopup()" style="width:100%;margin-top:8px;padding:10px;border-radius:10px;font-size:13px;font-weight:700;background:transparent;border:1px solid rgba(255,255,255,.1);color:var(--text-muted);cursor:pointer;">🗑 Rezervasyonu Sil</button>
+  `;
+  document.getElementById('resvPopup').style.display='flex';
+}
+
+function closeResvPopup() {
+  document.getElementById('resvPopup').style.display='none';
+}
+
 async function addReservation() {
-  const parentName = document.getElementById('rParent').value.trim();
+  const parentName  = document.getElementById('rParent').value.trim();
   const parentPhone = document.getElementById('rPhone').value.trim();
-  const childName = document.getElementById('rChild').value.trim();
-  const date = document.getElementById('rDate').value;
-  const duration = parseInt(document.getElementById('rDuration').value);
-  const note = document.getElementById('rNote').value.trim();
-  if (!parentName||!childName||!date) { toast('⚠️ Veli adı, çocuk adı ve tarih zorunlu'); return; }
-  const displayDate = new Date(date+'T12:00:00').toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'});
-  await api.post('/api/reservations', { parentName, parentPhone, childName, date, displayDate, duration, note, status:'bekliyor' });
+  const childName   = document.getElementById('rChild').value.trim();
+  const note        = document.getElementById('rNote').value.trim();
+  if (!parentName||!childName||!selectedDay) { toast('⚠️ Veli adı, çocuk adı ve gün seçimi zorunlu'); return; }
+  const displayDate = new Date(selectedDay+'T12:00:00').toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'});
+  await api.post('/api/reservations',{ parentName, parentPhone, childName, date:selectedDay, displayDate, duration:60, note, status:'bekliyor' });
   ['rParent','rPhone','rChild','rNote'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('rDate').value='';
   await loadReservations();
   toast('✅ Rezervasyon eklendi');
 }
