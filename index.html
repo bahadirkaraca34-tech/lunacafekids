@@ -767,8 +767,18 @@ body{font-family:'Poppins',sans-serif;background:var(--dark);color:var(--text);m
     </div>
     <div class="tv-active" id="tvActiveCount">0 çocuk</div>
   </div>
-  <div class="timer-list" id="tvGrid">
-    <div class="empty-state"><span class="ei">🎪</span><p>Henüz kimse yok</p></div>
+
+  <!-- Tablo başlığı -->
+  <div style="padding:0 14px;margin-top:14px;">
+    <div style="display:grid;grid-template-columns:1fr 100px 100px 120px;gap:8px;padding:8px 16px;background:rgba(255,255,255,.04);border-radius:10px;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;">
+      <div>Çocuk</div>
+      <div style="text-align:center;">Giriş</div>
+      <div style="text-align:center;">Çıkış</div>
+      <div style="text-align:center;">Durum</div>
+    </div>
+    <div id="tvGrid">
+      <div class="empty-state"><span class="ei">🎪</span><p>Henüz kimse yok</p></div>
+    </div>
   </div>
 </div>
 
@@ -776,6 +786,49 @@ body{font-family:'Poppins',sans-serif;background:var(--dark);color:var(--text);m
 <div class="page" id="p4">
   <div class="sec-title">☕ Masa Yönetimi</div>
   <div class="tables-grid" id="tablesGrid"></div>
+</div>
+
+<!-- MASA DETAY MODAL (statik) -->
+<div class="table-overlay" id="tableModal">
+  <div class="table-modal">
+    <div class="table-modal-header">
+      <div class="table-modal-title" id="tmTitle">Masa</div>
+      <button class="menu-close" onclick="closeTableModal()">✕</button>
+    </div>
+    <div class="table-modal-body">
+      <div class="table-order-list" id="tmOrderList"></div>
+      <div class="table-total-row">
+        <span>Toplam</span>
+        <span class="val" id="tmTotal">0₺</span>
+      </div>
+      <div style="margin-top:16px;">
+        <button class="btn-start" style="margin-bottom:8px;" onclick="openTableMenu()">🛒 Ürün Ekle</button>
+        <div class="pay-row">
+          <button class="pay-btn" onclick="tableCheckout('nakit')"><span class="pay-ico">💵</span>Nakit</button>
+          <button class="pay-btn" onclick="tableCheckout('kart')"><span class="pay-ico">💳</span>Kart</button>
+          <button class="pay-btn" onclick="tableCheckout('havale')"><span class="pay-ico">🏦</span>Havale</button>
+        </div>
+        <button class="btn-gs-iptal" style="width:100%;margin-top:8px;" onclick="clearTable()">🗑 Masayı Temizle</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MASA MENÜ OVERLAY (ayrı, menü modalının üstünde) -->
+<div class="menu-overlay" id="tableMenuOverlay">
+  <div class="menu-modal">
+    <div class="menu-header">
+      <div class="menu-header-title">
+        <div>
+          <div class="menu-child-name" id="tableMenuTitle">Masa</div>
+          <div class="menu-subtitle">Masaya ürün ekle</div>
+        </div>
+      </div>
+      <button class="menu-close" onclick="closeTableMenuOverlay()">✕</button>
+    </div>
+    <div class="menu-cats" id="tableMenuCats"></div>
+    <div class="menu-items" id="tableMenuItems"></div>
+  </div>
 </div>
 
 <!-- ══ PAGE 3: RAPOR ══ -->
@@ -1073,9 +1126,10 @@ socket.on('expenses:update',     ()=>{ if(document.getElementById('p3').classLis
 socket.on('tables:update', ()=>{ if(document.getElementById('p4').classList.contains('active')) loadTables(); });
 
 socket.on('timer:tick', (ticks)=>{
+  // Server tick'i sadece status güncellemesi için kullan
   ticks.forEach(t=>{
     const c=children.find(x=>idStr(x._id)===idStr(t.id));
-    if(c){ c.remaining=t.remaining; c.status=t.status; }
+    if(c){ c.status=t.status; }
   });
   updateTimerDisplays();
   updateNavCount();
@@ -1337,56 +1391,119 @@ function renderPage1(){
     :'<div class="empty-state"><span class="ei">🎈</span><p>Henüz kayıt yok</p></div>';
 }
 
+function getExitTime(c) {
+  // Giriş saati + toplam süre = çıkış saati (uyku modundan bağımsız, saate göre)
+  const start = new Date(c.startedAt);
+  const exitTime = new Date(start.getTime() + c.totalSec * 1000);
+  return exitTime;
+}
+
+function getStatus(c) {
+  const now = new Date();
+  const exit = getExitTime(c);
+  const diffMs = exit - now;
+  const diffSec = Math.floor(diffMs / 1000);
+  if (diffSec <= 0) return 'expired';
+  if (diffSec <= 300) return 'warning';
+  return 'running';
+}
+
+function getRemainingFromTime(c) {
+  const now = new Date();
+  const exit = getExitTime(c);
+  return Math.max(0, Math.floor((exit - now) / 1000));
+}
+
 function renderPage2(){
-  const active=children.filter(c=>c.status!=='paid');
-  const grid=document.getElementById('tvGrid');
-  document.getElementById('tvActiveCount').textContent=active.length+' cocuk';
-  if(!active.length){
-    grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><span class="ei">🎪</span><p>Henuz kimse yok</p></div>';
+  const active = children.filter(c => c.status !== 'paid');
+  const grid = document.getElementById('tvGrid');
+  document.getElementById('tvActiveCount').textContent = active.length + ' çocuk';
+
+  if (!active.length) {
+    grid.innerHTML = '<div class="empty-state"><span class="ei">🎪</span><p>Henüz kimse yok</p></div>';
     return;
   }
-  grid.innerHTML=active.map(c=>{
-    const mins=Math.floor(c.remaining/60),secs=c.remaining%60;
-    const timeStr=c.status==='expired'?'DOLDU':String(mins).padStart(2,'0')+':'+String(secs).padStart(2,'0');
-    const tc=c.status==='expired'?'tc-red':c.status==='warning'?'tc-yellow':'tc-green';
-    const statusTxt=c.status==='expired'?'Sure Doldu':c.status==='warning'?'Son 5 dk':'Oynuyor';
-    const statusCls=c.status==='expired'?'s-exp':c.status==='warning'?'s-warn':'s-run';
-    const cid=idStr(c._id);
-    return `
-      <div class="tl-card ${c.status}" id="tvc-${cid}">
-        <div class="tl-name">${c.fullName}</div>
-        <div class="tl-dur">⏱ ${c.duration}dk</div>
-        <div class="tl-time ${tc}" id="tvt-${cid}">${timeStr}</div>
-        <div class="tl-status ${statusCls}">${statusTxt}</div>
-      </div>`;
+
+  grid.innerHTML = active.map(c => {
+    const cid = idStr(c._id);
+    const start = new Date(c.startedAt);
+    const exit = getExitTime(c);
+    const status = getStatus(c);
+    const remaining = getRemainingFromTime(c);
+    const mins = Math.floor(remaining / 60);
+    const secs = remaining % 60;
+
+    const girisSaat = start.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+    const cikisSaat = exit.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+
+    const statusColor = status === 'expired' ? 'var(--coral)' : status === 'warning' ? 'var(--yellow)' : 'var(--teal)';
+    const statusBg = status === 'expired' ? 'rgba(255,92,92,.15)' : status === 'warning' ? 'rgba(255,209,102,.15)' : 'rgba(6,214,160,.15)';
+    const statusTxt = status === 'expired' ? '🔴 Bitti' : status === 'warning' ? '⚠️ Son ' + mins + ':' + String(secs).padStart(2,'0') : '🟢 ' + String(mins).padStart(2,'0') + ':' + String(secs).padStart(2,'0');
+    const rowBg = status === 'expired' ? 'rgba(255,92,92,.07)' : status === 'warning' ? 'rgba(255,209,102,.05)' : 'rgba(255,255,255,.03)';
+    const borderColor = status === 'expired' ? 'rgba(255,92,92,.4)' : status === 'warning' ? 'rgba(255,209,102,.3)' : 'rgba(255,255,255,.08)';
+    const anim = status === 'expired' ? 'animation:pulse-red 1.5s infinite;' : status === 'warning' ? 'animation:pulse-warn 1.5s infinite;' : '';
+
+    return `<div id="tvc-${cid}" style="display:grid;grid-template-columns:1fr 100px 100px 120px;gap:8px;align-items:center;padding:12px 16px;background:${rowBg};border:1.5px solid ${borderColor};border-radius:12px;margin-bottom:8px;${anim}">
+      <div>
+        <div style="font-weight:700;font-size:15px;">${c.fullName}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">⏱ ${c.duration} dk</div>
+      </div>
+      <div style="text-align:center;font-family:'Fredoka One',cursive;font-size:18px;color:var(--text-muted);">${girisSaat}</div>
+      <div style="text-align:center;font-family:'Fredoka One',cursive;font-size:18px;color:${status==='expired'?'var(--coral)':'var(--text)'};">${cikisSaat}</div>
+      <div style="text-align:center;">
+        <span id="tvt-${cid}" style="padding:5px 10px;border-radius:20px;font-size:12px;font-weight:700;background:${statusBg};color:${statusColor};white-space:nowrap;">${statusTxt}</span>
+      </div>
+    </div>`;
   }).join('');
+}
+
+function updateTimerDisplays(){
+  children.forEach(c => {
+    const cid = idStr(c._id);
+    // Page 1 timer
+    const el1 = document.getElementById('tm-'+cid);
+    if(el1){
+      const remaining = getRemainingFromTime(c);
+      const status = getStatus(c);
+      if(status==='expired'){el1.textContent='Bitti';el1.className='timer-txt tc-red';}
+      else{
+        el1.className='timer-txt '+(status==='warning'?'tc-yellow':'tc-green');
+        el1.textContent=String(Math.floor(remaining/60)).padStart(2,'0')+':'+String(remaining%60).padStart(2,'0');
+      }
+    }
+    // Page 2 (liste)
+    const el2 = document.getElementById('tvt-'+cid);
+    const row2 = document.getElementById('tvc-'+cid);
+    if(el2){
+      const remaining = getRemainingFromTime(c);
+      const status = getStatus(c);
+      const mins = Math.floor(remaining/60);
+      const secs = remaining % 60;
+      const statusColor = status==='expired'?'var(--coral)':status==='warning'?'var(--yellow)':'var(--teal)';
+      const statusBg = status==='expired'?'rgba(255,92,92,.15)':status==='warning'?'rgba(255,209,102,.15)':'rgba(6,214,160,.15)';
+      const statusTxt = status==='expired'?'🔴 Bitti':status==='warning'?'⚠️ Son '+String(mins).padStart(2,'0')+':'+String(secs).padStart(2,'0'):'🟢 '+String(mins).padStart(2,'0')+':'+String(secs).padStart(2,'0');
+      el2.textContent = statusTxt;
+      el2.style.background = statusBg;
+      el2.style.color = statusColor;
+      if(row2){
+        const rowBg = status==='expired'?'rgba(255,92,92,.07)':status==='warning'?'rgba(255,209,102,.05)':'rgba(255,255,255,.03)';
+        const borderColor = status==='expired'?'rgba(255,92,92,.4)':status==='warning'?'rgba(255,209,102,.3)':'rgba(255,255,255,.08)';
+        row2.style.background = rowBg;
+        row2.style.borderColor = borderColor;
+      }
+      // Alert
+      if(status==='expired' && c.status!=='expired'){
+        playBell();
+        speak(`${c.firstName}, süren doldu! Lütfen çıkış yapınız.`);
+        toast(`🔔 ${c.fullName} — SÜRE BİTTİ!`);
+      }
+    }
+  });
 }
 
 function renderBoth(){
   renderPage1();
   if(document.getElementById('p2').classList.contains('active'))renderPage2();
-}
-
-function updateTimerDisplays(){
-  children.forEach(c=>{
-    const cid=idStr(c._id);
-    // Page 1
-    const el1=document.getElementById('tm-'+cid);
-    if(el1){
-      if(c.status==='expired'){el1.textContent='BİTTİ';el1.className='timer-txt tc-red';}
-      else{el1.className='timer-txt '+(c.status==='warning'?'tc-yellow':'tc-green');
-        el1.textContent=String(Math.floor(c.remaining/60)).padStart(2,'0')+':'+String(c.remaining%60).padStart(2,'0');}
-    }
-    // Page 2 (kompakt liste)
-    const el2=document.getElementById('tvt-'+cid);
-    const card2=document.getElementById('tvc-'+cid);
-    if(el2){
-      if(c.status==='expired'){el2.textContent='DOLDU';el2.className='tl-time tc-red';}
-      else{el2.className='tl-time '+(c.status==='warning'?'tc-yellow':'tc-green');
-        el2.textContent=String(Math.floor(c.remaining/60)).padStart(2,'0')+':'+String(c.remaining%60).padStart(2,'0');}
-      if(card2) card2.className='tl-card '+c.status;
-    }
-  });
 }
 
 // ══ TV CLOCK ══
@@ -1772,106 +1889,99 @@ function renderTables() {
     const t = tables.find(x => x.tableNo === i);
     const total = t ? t.products.reduce((s,p)=>s+p.price,0) : 0;
     const isActive = t && t.status === 'active';
-    grid.innerHTML += `
-      <div class="table-card ${isActive?'active':''}" onclick="openTableModal(${i})">
-        <div class="table-num">${i}</div>
-        <div class="table-label">Masa ${i}</div>
-        ${isActive ? `
-          <div class="table-total">${total}₺</div>
-          <div class="table-items">${t.products.length} ürün</div>
-        ` : '<div class="table-label" style="margin-top:8px;">Boş</div>'}
-      </div>`;
+    const div = document.createElement('div');
+    div.className = `table-card ${isActive?'active':''}`;
+    div.onclick = () => openTableModal(i);
+    div.innerHTML = `
+      <div class="table-num">${i}</div>
+      <div class="table-label">Masa ${i}</div>
+      ${isActive ? `<div class="table-total">${total}₺</div><div class="table-items">${t.products.length} ürün</div>` : '<div class="table-label" style="margin-top:8px;">Boş</div>'}`;
+    grid.appendChild(div);
   }
 }
 
 function openTableModal(no) {
   activeTableNo = no;
+  refreshTableModal();
+  document.getElementById('tableModal').classList.add('open');
+}
+
+function refreshTableModal() {
+  const no = activeTableNo;
   const t = tables.find(x => x.tableNo === no);
   const total = t ? t.products.reduce((s,p)=>s+p.price,0) : 0;
-
-  let orderList = '';
-  if (t && t.products.length) {
-    orderList = t.products.map((p,i)=>`
-      <div class="table-order-item">
-        <span>${p.name}</span>
-        <span>${p.price}₺ <span class="rm" onclick="removeTableProd(${no},${i})">✕</span></span>
-      </div>`).join('');
-  } else {
-    orderList = '<div style="color:var(--text-muted);font-size:13px;padding:8px 0;">Henüz sipariş yok</div>';
-  }
-
-  // Menü modal'ını masa modu için aç
-  document.getElementById('menuChildName').textContent = `Masa ${no}`;
-  document.getElementById('menuSubtitle').textContent = `Toplam: ${total}₺`;
-
-  // Masa özel modal
-  let modalEl = document.getElementById('tableModal');
-  if (!modalEl) {
-    modalEl = document.createElement('div');
-    modalEl.className = 'table-overlay';
-    modalEl.id = 'tableModal';
-    modalEl.innerHTML = `
-      <div class="table-modal">
-        <div class="table-modal-header">
-          <div class="table-modal-title" id="tmTitle">Masa ${no}</div>
-          <button class="menu-close" onclick="closeTableModal()">✕</button>
-        </div>
-        <div class="table-modal-body">
-          <div class="table-order-list" id="tmOrderList"></div>
-          <div class="table-total-row"><span>Toplam</span><span class="val" id="tmTotal">0₺</span></div>
-          <div style="margin-top:16px;">
-            <button class="btn-start" style="margin-bottom:8px;" onclick="openTableMenu()">🛒 Ürün Ekle</button>
-            <div class="pay-row">
-              <button class="pay-btn" onclick="tableCheckout('nakit')"><span class="pay-ico">💵</span>Nakit</button>
-              <button class="pay-btn" onclick="tableCheckout('kart')"><span class="pay-ico">💳</span>Kart</button>
-              <button class="pay-btn" onclick="tableCheckout('havale')"><span class="pay-ico">🏦</span>Havale</button>
-            </div>
-            <button class="btn-gs-iptal" style="width:100%;margin-top:8px;" onclick="clearTable(${no})">🗑 Masayı Temizle</button>
-          </div>
-        </div>
-      </div>`;
-    document.body.appendChild(modalEl);
-    modalEl.addEventListener('click', e => { if(e.target===modalEl) closeTableModal(); });
-  }
-
   document.getElementById('tmTitle').textContent = `☕ Masa ${no}`;
-  document.getElementById('tmOrderList').innerHTML = orderList;
   document.getElementById('tmTotal').textContent = total + '₺';
-  modalEl.classList.add('open');
+  document.getElementById('tmOrderList').innerHTML = t && t.products.length
+    ? t.products.map((p,i)=>`
+        <div class="table-order-item">
+          <span>${p.name}</span>
+          <span style="display:flex;align-items:center;gap:8px;">${p.price}₺
+            <span onclick="removeTableProd(${no},${i})" style="cursor:pointer;color:var(--coral);font-size:12px;">✕</span>
+          </span>
+        </div>`).join('')
+    : '<div style="color:var(--text-muted);font-size:13px;padding:8px 0;">Henüz sipariş yok</div>';
 }
 
 function closeTableModal() {
-  document.getElementById('tableModal')?.classList.remove('open');
+  document.getElementById('tableModal').classList.remove('open');
+  activeTableNo = null;
 }
 
+// Ayrı masa menü overlay - çocuk menüsüyle karışmıyor
 function openTableMenu() {
-  if (!activeTableNo) { toast('Masa seçilmedi'); return; }
-  // Masa modalını kapat
-  document.getElementById('tableModal')?.classList.remove('open');
-  // Menü başlığını set et
-  document.getElementById('menuChildName').textContent = `☕ Masa ${activeTableNo}`;
-  document.getElementById('menuSubtitle').textContent = 'Masaya ürün ekle';
-  // Table mod
-  window._tableMenuMode = true;
-  window._tableMenuNo = activeTableNo;
-  // Kategorileri göster (Ek Süre hariç)
-  const container = document.getElementById('menuCats');
-  container.innerHTML = MENU.filter(c=>c.catName!=='Ek Süre').map(cat=>{
+  if (!activeTableNo) return;
+  document.getElementById('tableMenuTitle').textContent = `☕ Masa ${activeTableNo}`;
+  // Kategorileri doldur
+  const cats = document.getElementById('tableMenuCats');
+  cats.innerHTML = MENU.filter(c=>c.catName!=='Ek Süre').map(cat=>{
     const i = MENU.indexOf(cat);
-    return `<div class="menu-cat-btn" onclick="showMenuItems(${i})">
+    return `<div class="menu-cat-btn" onclick="showTableMenuItems(${i})">
       <div class="menu-cat-icon">${cat.icon}</div>
       <div class="menu-cat-name">${cat.catName}</div>
     </div>`;
   }).join('');
-  container.style.display = '';
-  document.getElementById('menuItems').classList.remove('active');
-  // Menüyü aç
-  document.getElementById('menuOverlay').classList.add('open');
+  cats.style.display = '';
+  document.getElementById('tableMenuItems').classList.remove('active');
+  document.getElementById('tableMenuOverlay').classList.add('open');
+}
+
+function showTableMenuItems(catIdx) {
+  const cat = MENU[catIdx];
+  const itemsEl = document.getElementById('tableMenuItems');
+  const catsEl = document.getElementById('tableMenuCats');
+  itemsEl.innerHTML = `
+    <button class="menu-back" onclick="showTableMenuCats()">← Kategoriler</button>
+    <div class="menu-cat-title">${cat.icon} ${cat.catName}</div>
+    ${cat.items.map(p=>`
+      <div class="menu-item-btn" onclick="addProdToTable('${p.name}',${p.price})">
+        <span class="menu-item-name">${p.name}</span>
+        <span class="menu-item-price">${p.price}₺</span>
+      </div>`).join('')}`;
+  catsEl.style.display = 'none';
+  itemsEl.classList.add('active');
+}
+
+function showTableMenuCats() {
+  document.getElementById('tableMenuCats').style.display = '';
+  document.getElementById('tableMenuItems').classList.remove('active');
+}
+
+function closeTableMenuOverlay() {
+  document.getElementById('tableMenuOverlay').classList.remove('open');
+  // Masa modalını güncelle ve tekrar aç
+  if (activeTableNo) {
+    loadTables().then(() => {
+      refreshTableModal();
+      document.getElementById('tableModal').classList.add('open');
+    });
+  }
 }
 
 async function addProdToTable(name, price) {
   await api.post(`/api/tables/${activeTableNo}/add-product`, { name, price });
   toast(`✅ Masa ${activeTableNo}'e ${name} eklendi`);
+  // Menüyü açık bırak, sadece toast göster
 }
 
 async function removeTableProd(no, idx) {
@@ -1879,13 +1989,10 @@ async function removeTableProd(no, idx) {
   if (!t) return;
   const newProds = [...t.products];
   newProds.splice(idx,1);
-  // Güncelle (put endpoint yok, sil-yeniden ekle yapıyoruz)
   await api.del(`/api/tables/${no}`);
-  for (const p of newProds) {
-    await api.post(`/api/tables/${no}/add-product`, p);
-  }
+  for (const p of newProds) await api.post(`/api/tables/${no}/add-product`, p);
   await loadTables();
-  openTableModal(no);
+  refreshTableModal();
 }
 
 async function tableCheckout(payment) {
@@ -1893,14 +2000,16 @@ async function tableCheckout(payment) {
   if (!t||!t.products.length) { toast('⚠️ Sipariş yok'); return; }
   const res = await api.post(`/api/tables/${activeTableNo}/checkout`, { payment });
   closeTableModal();
+  await loadTables();
   toast(`✅ Masa ${activeTableNo} — ${res.grand}₺ tahsil edildi`);
 }
 
-async function clearTable(no) {
-  if (!confirm(`Masa ${no} sıfırlansın mı?`)) return;
-  await api.del(`/api/tables/${no}`);
+async function clearTable() {
+  if (!confirm(`Masa ${activeTableNo} sıfırlansın mı?`)) return;
+  await api.del(`/api/tables/${activeTableNo}`);
   closeTableModal();
-  toast(`🗑 Masa ${no} temizlendi`);
+  await loadTables();
+  toast(`🗑 Masa ${activeTableNo} temizlendi`);
 }
 
 // ══ KULLANICI YÖNETİMİ ══
@@ -2156,6 +2265,8 @@ function speak(text){if(!window.speechSynthesis)return;window.speechSynthesis.ca
 // Modal backdrop close
 document.getElementById('recModal').addEventListener('click',function(e){if(e.target===this)closeModal();});
 document.getElementById('menuOverlay').addEventListener('click',function(e){if(e.target===this)closeMenuModal();});
+document.getElementById('tableModal').addEventListener('click',function(e){if(e.target===this)closeTableModal();});
+document.getElementById('tableMenuOverlay').addEventListener('click',function(e){if(e.target===this)closeTableMenuOverlay();});
 
 // ══ INIT ══
 buildMenuCats();
@@ -2168,6 +2279,10 @@ if(sessionStorage.getItem('lck_auth')==='1' && _savedUser){
 } else {
   document.getElementById('loadingScreen').classList.add('hidden');
 }
+// Client tarafı her saniye saate göre güncelle (uyku modundan bağımsız)
+setInterval(()=>{
+  if(children.length) updateTimerDisplays();
+}, 1000);
 // Socket ile gerçek zamanlı güncelleme yapılıyor
 // setInterval ile loadChildren kaldırıldı - çift güncelleme önlendi
 </script>
