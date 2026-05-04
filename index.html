@@ -665,6 +665,8 @@ body{font-family:'Poppins',sans-serif;background:var(--dark);color:var(--text);m
   <button class="nav-tab" id="tab2" onclick="goPage(2)">⏱ Oyun Alanı</button>
   <button class="nav-tab" id="tab4" onclick="goPage(4)">☕ Masalar</button>
   <button class="nav-tab" id="tab3" onclick="goPage(3)">📊 Rapor</button>
+  <button class="nav-tab" id="tab5" onclick="goPage(5)">👥 Kullanıcılar</button>
+  <button class="nav-tab" id="tab6" onclick="goPage(6)">📅 Oyun Grupları</button>
   <div class="live-badge">
     <div class="live-dot"></div>
     <span id="navCount">0 çocuk</span>
@@ -680,27 +682,11 @@ body{font-family:'Poppins',sans-serif;background:var(--dark);color:var(--text);m
     <button class="bnav-btn" id="btab2" onclick="goPage(2)"><span class="bico">⏱</span>Oyun</button>
     <button class="bnav-btn" id="btab4" onclick="goPage(4)"><span class="bico">☕</span>Masalar</button>
     <button class="bnav-btn" id="btab3" onclick="goPage(3)"><span class="bico">📊</span>Rapor</button>
+    <button class="bnav-btn" id="btab6" onclick="goPage(6)"><span class="bico">📅</span>Gruplar</button>
   </div>
 </nav>
 
 <div class="toast" id="toast"></div>
-
-<!-- Menü Modal (body level - tüm sayfalardan erişilebilir) -->
-<div class="menu-overlay" id="menuOverlay">
-  <div class="menu-modal">
-    <div class="menu-header">
-      <div class="menu-header-title">
-        <div>
-          <div class="menu-child-name" id="menuChildName">—</div>
-          <div class="menu-subtitle" id="menuSubtitle">Hesaba ürün ekle</div>
-        </div>
-      </div>
-      <button class="menu-close" onclick="closeMenuModal()">✕</button>
-    </div>
-    <div class="menu-cats" id="menuCats"></div>
-    <div class="menu-items" id="menuItems"></div>
-  </div>
-</div>
 
 <!-- ══ PAGE 1: GİRİŞ ══ -->
 <div class="page active" id="p1">
@@ -714,10 +700,7 @@ body{font-family:'Poppins',sans-serif;background:var(--dark);color:var(--text);m
 
     <!-- Tekli giriş -->
     <div id="soloForm">
-      <div class="form-row">
-        <div class="fg"><label>Ad</label><input class="inp" id="fFirst" placeholder="Örn: Zeynep" type="text" autocomplete="off" autocorrect="off"/></div>
-        <div class="fg"><label>Soyad</label><input class="inp" id="fLast" placeholder="Örn: Kaya" type="text" autocomplete="off" autocorrect="off"/></div>
-      </div>
+      <div class="fg"><label>Ad Soyad</label><input class="inp" id="fFullName" placeholder="Örn: Zeynep Kaya" type="text" autocomplete="off" autocorrect="off"/></div>
     </div>
 
     <!-- Grup girişi -->
@@ -738,6 +721,23 @@ body{font-family:'Poppins',sans-serif;background:var(--dark);color:var(--text);m
       </div>
     </div>
     <button class="btn-start" onclick="addChild()">▶ Başla</button>
+  </div>
+
+  <!-- Menü Modal -->
+  <div class="menu-overlay" id="menuOverlay">
+    <div class="menu-modal">
+      <div class="menu-header">
+        <div class="menu-header-title">
+          <div>
+            <div class="menu-child-name" id="menuChildName">—</div>
+            <div class="menu-subtitle" id="menuSubtitle">Hesaba ürün ekle</div>
+          </div>
+        </div>
+        <button class="menu-close" onclick="closeMenuModal()">✕</button>
+      </div>
+      <div class="menu-cats" id="menuCats"></div>
+      <div class="menu-items" id="menuItems"></div>
+    </div>
   </div>
 
   <div class="sec-title">🎡 Aktif Çocuklar</div>
@@ -783,11 +783,12 @@ body{font-family:'Poppins',sans-serif;background:var(--dark);color:var(--text);m
 
   <!-- GÜNLÜK TAB -->
   <div id="rtabContent1">
-    <div class="stats-grid">
+    <div class="stats-grid" style="grid-template-columns:repeat(2,1fr);">
       <div class="stat-card c1"><div class="stat-ico">👦</div><div class="stat-val" id="rKids">0</div><div class="stat-lbl">Toplam Çocuk</div></div>
       <div class="stat-card c2"><div class="stat-ico">💰</div><div class="stat-val" id="rTotal">0₺</div><div class="stat-lbl">Toplam Ciro</div></div>
       <div class="stat-card c3"><div class="stat-ico">💳</div><div class="stat-val" id="rCard">0₺</div><div class="stat-lbl">Kredi Kartı</div></div>
       <div class="stat-card c4"><div class="stat-ico">💵</div><div class="stat-val" id="rCash">0₺</div><div class="stat-lbl">Nakit</div></div>
+      <div class="stat-card c1" style="grid-column:1/-1;"><div class="stat-ico">🏦</div><div class="stat-val" id="rHavale">0₺</div><div class="stat-lbl">Havale</div></div>
     </div>
     <div class="report-cols">
       <div>
@@ -859,6 +860,60 @@ body{font-family:'Poppins',sans-serif;background:var(--dark);color:var(--text);m
 </div>
 
 <!-- GÜNSONU RAPOR EKRANI -->
+<!-- ══ PAGE 5: KULLANICILAR ══ -->
+<div class="page" id="p5">
+  <div class="sec-title">👥 Kullanıcı Yönetimi</div>
+  <div class="glass" style="margin-bottom:16px;">
+    <div style="font-size:13px;font-weight:700;color:var(--yellow);margin-bottom:12px;">➕ Yeni Kullanıcı</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div class="fg"><label>Kullanıcı Adı</label><input class="inp" id="uUsername" placeholder="kullanici" type="text" autocomplete="off"/></div>
+      <div class="fg"><label>Şifre</label><input class="inp" id="uPassword" placeholder="şifre" type="text"/></div>
+      <div class="fg" style="grid-column:1/-1"><label>Görünen Ad</label><input class="inp" id="uDisplay" placeholder="Ad Soyad" type="text"/></div>
+    </div>
+    <div style="margin-top:12px;">
+      <label style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:8px;">YETKİLER</label>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" id="pSell" checked> Ürün Satış</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" id="pReport"> Rapor</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" id="pTables" checked> Masa</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" id="pChildren" checked> Çocuk Ekle</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" id="pAdmin"> Admin</label>
+      </div>
+    </div>
+    <button class="btn-start" style="margin-top:12px;" onclick="addUser()">➕ Ekle</button>
+  </div>
+  <div id="userList"></div>
+</div>
+
+<!-- ══ PAGE 6: OYUN GRUPLARI ══ -->
+<div class="page" id="p6">
+  <div class="sec-title">📅 Oyun Grupları & Rezervasyonlar</div>
+  <div class="glass" style="margin-bottom:16px;">
+    <div style="font-size:13px;font-weight:700;color:var(--yellow);margin-bottom:12px;">➕ Yeni Rezervasyon</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div class="fg"><label>Veli Adı Soyadı</label><input class="inp" id="rParent" placeholder="Ayşe Yılmaz" type="text" autocomplete="off"/></div>
+      <div class="fg"><label>Telefon</label><input class="inp" id="rPhone" placeholder="05XX XXX XX XX" type="tel"/></div>
+      <div class="fg"><label>Çocuk Adı Soyadı</label><input class="inp" id="rChild" placeholder="Ali Yılmaz" type="text" autocomplete="off"/></div>
+      <div class="fg"><label>Geliş Tarihi</label><input class="inp" id="rDate" type="date"/></div>
+      <div class="fg"><label>Süre</label>
+        <select class="inp" id="rDuration" style="-webkit-appearance:auto;">
+          <option value="30">30 dakika - 150₺</option>
+          <option value="60">60 dakika - 250₺</option>
+        </select>
+      </div>
+      <div class="fg"><label>Not</label><input class="inp" id="rNote" placeholder="Opsiyonel..." type="text"/></div>
+    </div>
+    <button class="btn-start" style="margin-top:12px;" onclick="addReservation()">📅 Rezervasyon Ekle</button>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+    <button class="dur-btn sel" id="rfAll" onclick="filterResv('all')" style="flex:0;padding:8px 14px;font-size:12px;">Tümü</button>
+    <button class="dur-btn" id="rfToday" onclick="filterResv('today')" style="flex:0;padding:8px 14px;font-size:12px;">Bugün</button>
+    <button class="dur-btn" id="rfWeek" onclick="filterResv('week')" style="flex:0;padding:8px 14px;font-size:12px;">Bu Hafta</button>
+    <button class="dur-btn" id="rfWait" onclick="filterResv('bekliyor')" style="flex:0;padding:8px 14px;font-size:12px;">Bekleyenler</button>
+  </div>
+  <div id="resvList"></div>
+</div>
+
 <div class="gunsonu-overlay" id="gunsonuOverlay">
   <div class="gunsonu-modal">
     <div class="gunsonu-top">
@@ -887,6 +942,7 @@ body{font-family:'Poppins',sans-serif;background:var(--dark);color:var(--text);m
       <div class="pay-row">
         <button class="pay-btn" id="payNakit" onclick="selPay('nakit')"><span class="pay-ico">💵</span>Nakit</button>
         <button class="pay-btn" id="payKart" onclick="selPay('kart')"><span class="pay-ico">💳</span>Kredi Kartı</button>
+        <button class="pay-btn" id="payHavale" onclick="selPay('havale')"><span class="pay-ico">🏦</span>Havale</button>
       </div>
       <button class="btn-confirm" onclick="confirmPay()">✅ Ödemeyi Tamamla</button>
       <button class="btn-cancel-modal" onclick="closeModal()">İptal</button>
@@ -899,13 +955,49 @@ body{font-family:'Poppins',sans-serif;background:var(--dark);color:var(--text);m
 </footer>
 
 <script>
-// ══ KİMLİK BİLGİLERİ ══
-const USERS = {
-  'luna': 'luna2025',
-  'admin': 'karaca2025',
-};
+// ══ GİRİŞ ══
+let currentUser = null;
 
-// ══ MENÜ ÜRÜNLERİ ══
+async function doLogin() {
+  const user = document.getElementById('loginUser').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const err  = document.getElementById('loginError');
+  try {
+    const res = await fetch('/api/auth/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({username:user, password:pass})
+    });
+    if (!res.ok) { err.textContent='❌ Hatalı kullanıcı adı veya şifre!'; document.getElementById('loginPass').value=''; return; }
+    currentUser = await res.json();
+    sessionStorage.setItem('lck_auth','1');
+    sessionStorage.setItem('lck_user', JSON.stringify(currentUser));
+    document.getElementById('loginScreen').classList.add('hidden');
+    applyPermissions();
+    loadAll();
+  } catch(e) { err.textContent='❌ Bağlantı hatası!'; }
+}
+
+function applyPermissions() {
+  if (!currentUser) return;
+  const p = currentUser.permissions;
+  // Rapor sayfası
+  if (!p.canViewReport) {
+    document.getElementById('tab3')?.setAttribute('style','display:none');
+    document.getElementById('btab3')?.setAttribute('style','display:none');
+  }
+  // Kullanıcı yönetimi sadece admin
+  if (currentUser.role !== 'admin') {
+    document.getElementById('tab5')?.setAttribute('style','display:none');
+    document.getElementById('btab5')?.setAttribute('style','display:none');
+  }
+}
+
+function doLogout() {
+  sessionStorage.removeItem('lck_auth');
+  sessionStorage.removeItem('lck_user');
+  currentUser = null;
+  location.reload();
+}
 const MENU = [
   { icon:'☕', catName:'Kahveler', items:[
     {name:'Espresso',price:90},{name:'Americano',price:110},{name:'Latte',price:130},
@@ -948,24 +1040,7 @@ let selDuration=30, selPayment=null, modalChildId=null;
 const PRICES={30:150,60:250};
 
 // ══ LOGIN ══
-function doLogin() {
-  const user = document.getElementById('loginUser').value.trim();
-  const pass = document.getElementById('loginPass').value;
-  const err  = document.getElementById('loginError');
-  if (USERS[user] && USERS[user]===pass) {
-    sessionStorage.setItem('lck_auth','1');
-    document.getElementById('loginScreen').classList.add('hidden');
-    loadAll();
-  } else {
-    err.textContent = '❌ Kullanıcı adı veya şifre hatalı!';
-    document.getElementById('loginPass').value='';
-  }
-}
-
-function doLogout() {
-  sessionStorage.removeItem('lck_auth');
-  location.reload();
-}
+// ══ MENÜ ÜRÜNLERİ ══
 
 // ══ SOCKET ══
 const socket = io();
@@ -1014,7 +1089,7 @@ async function loadAll(){
 
 // ══ NAV ══
 function goPage(n){
-  [1,2,3,4].forEach(i=>{
+  [1,2,3,4,5,6].forEach(i=>{
     document.getElementById('p'+i)?.classList.toggle('active',i===n);
     document.getElementById('tab'+i)?.classList.toggle('active',i===n);
     document.getElementById('btab'+i)?.classList.toggle('active',i===n);
@@ -1022,6 +1097,8 @@ function goPage(n){
   if(n===3){loadTransactions();loadExpenses();renderReport();}
   if(n===2){renderPage2();}
   if(n===4){loadTables();}
+  if(n===5){loadUsers();}
+  if(n===6){loadReservations();}
 }
 
 // ══ GİRİŞ TİPİ ══
@@ -1108,7 +1185,6 @@ async function addProdFromMenu(name,price){
   // Masa modu
   if (window._tableMenuMode) {
     await addProdToTable(name, price);
-    closeMenuModal();
     return;
   }
   if(!selectedId){toast('Önce bir çocuk seçin');return;}
@@ -1160,15 +1236,17 @@ async function addChild(){
     toast(`✅ Grup: ${groupLabel} · ${selDuration}dk · ${grupFiyat}₺ (${kisiSayisi} kişi)`);
     return;
   }
-  const first=document.getElementById('fFirst').value.trim();
-  const last=document.getElementById('fLast').value.trim();
-  if(!first||!last){toast('⚠️ Ad ve soyad girin!');return;}
+  // Tekli giriş
+  const fullName = document.getElementById('fFullName').value.trim();
+  if(!fullName){toast('⚠️ Ad soyad girin!');return;}
+  const parts = fullName.split(' ');
+  const first = parts[0];
+  const last = parts.slice(1).join(' ') || '—';
   const now=new Date();
-  const child={clientId:now.getTime(),firstName:first,lastName:last,fullName:first+' '+last,
+  const child={clientId:now.getTime(),firstName:first,lastName:last,fullName:fullName,
     duration:selDuration,price:PRICES[selDuration],totalSec:selDuration*60,remaining:selDuration*60,
     status:'running',products:[],startedAt:now};
-  document.getElementById('fFirst').value='';
-  document.getElementById('fLast').value='';
+  document.getElementById('fFullName').value='';
   const saved=await api.post('/api/children',child);
   selectedId=saved._id;
   document.getElementById('menuChildName').textContent=saved.fullName;
@@ -1205,6 +1283,7 @@ function childRowFull(c,idx){
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
         <div class="total-badge">${total}₺</div>
         <button class="btn-bill" onclick="event.stopPropagation();openReceipt('${cid}')">🧾 Hesap</button>
+        <button onclick="event.stopPropagation();cancelChild('${cid}')" style="padding:5px 10px;background:rgba(255,92,92,.15);border:1px solid rgba(255,92,92,.3);border-radius:8px;color:var(--coral);font-size:11px;font-weight:700;cursor:pointer;">✕ İptal</button>
       </div>
       ${prods?`<div class="prods-row">${prods}</div>`:''}
     </div>`;
@@ -1315,6 +1394,7 @@ function selPay(m){
   selPayment=m;
   document.getElementById('payNakit').classList.toggle('sel-pay',m==='nakit');
   document.getElementById('payKart').classList.toggle('sel-pay',m==='kart');
+  document.getElementById('payHavale')?.classList.toggle('sel-pay',m==='havale');
 }
 
 async function confirmPay(){
@@ -1338,13 +1418,16 @@ function renderReport(){
   const paid=transactions;
   const cashTx=paid.filter(t=>t.payment==='nakit');
   const cardTx=paid.filter(t=>t.payment==='kart');
+  const havaleTx=paid.filter(t=>t.payment==='havale');
   const totalCash=cashTx.reduce((s,t)=>s+t.grand,0);
   const totalCard=cardTx.reduce((s,t)=>s+t.grand,0);
-  const grand=totalCash+totalCard;
+  const totalHavale=havaleTx.reduce((s,t)=>s+t.grand,0);
+  const grand=totalCash+totalCard+totalHavale;
   document.getElementById('rKids').textContent=paid.length;
   document.getElementById('rTotal').textContent=grand+'₺';
   document.getElementById('rCard').textContent=totalCard+'₺';
   document.getElementById('rCash').textContent=totalCash+'₺';
+  document.getElementById('rHavale').textContent=totalHavale+'₺';
   document.getElementById('todayCash').value=totalCash;
   document.getElementById('reportDate').textContent=new Date().toLocaleDateString('tr-TR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   const prodCount={};
@@ -1715,6 +1798,7 @@ function openTableModal(no) {
             <div class="pay-row">
               <button class="pay-btn" onclick="tableCheckout('nakit')"><span class="pay-ico">💵</span>Nakit</button>
               <button class="pay-btn" onclick="tableCheckout('kart')"><span class="pay-ico">💳</span>Kart</button>
+              <button class="pay-btn" onclick="tableCheckout('havale')"><span class="pay-ico">🏦</span>Havale</button>
             </div>
             <button class="btn-gs-iptal" style="width:100%;margin-top:8px;" onclick="clearTable(${no})">🗑 Masayı Temizle</button>
           </div>
@@ -1779,6 +1863,169 @@ async function clearTable(no) {
   toast(`🗑 Masa ${no} temizlendi`);
 }
 
+// ══ KULLANICI YÖNETİMİ ══
+let users = [];
+async function loadUsers() {
+  users = await api.get('/api/users');
+  renderUsers();
+}
+
+function renderUsers() {
+  const el = document.getElementById('userList');
+  if (!users.length) { el.innerHTML='<div class="empty-state"><span class="ei">👤</span><p>Kullanıcı yok</p></div>'; return; }
+  el.innerHTML = users.map(u=>`
+    <div class="child-card" style="cursor:default;grid-template-columns:auto 1fr auto;">
+      <div style="font-size:24px;">${u.role==='admin'?'👑':'👤'}</div>
+      <div>
+        <div class="child-name-text">${u.displayName||u.username}</div>
+        <div class="child-sub">@${u.username} · ${u.role==='admin'?'Admin':'Personel'}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">
+          ${u.permissions?.canSell?'✅ Satış ':''} 
+          ${u.permissions?.canViewReport?'✅ Rapor ':''} 
+          ${u.permissions?.canManageTables?'✅ Masa ':''}
+          ${u.permissions?.canAddChildren?'✅ Çocuk Ekle':''}
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <span style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;background:${u.active?'rgba(6,214,160,.15)':'rgba(255,92,92,.15)'};color:${u.active?'var(--teal)':'var(--coral)'};">${u.active?'Aktif':'Pasif'}</span>
+        <button onclick="toggleUser('${u._id}',${!u.active})" style="padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:var(--text-muted);cursor:pointer;">${u.active?'Pasif Yap':'Aktif Yap'}</button>
+        <button onclick="deleteUser('${u._id}')" style="padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700;background:rgba(255,92,92,.15);border:1px solid rgba(255,92,92,.3);color:var(--coral);cursor:pointer;">Sil</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function addUser() {
+  const username = document.getElementById('uUsername').value.trim();
+  const password = document.getElementById('uPassword').value.trim();
+  const displayName = document.getElementById('uDisplay').value.trim();
+  if (!username||!password) { toast('⚠️ Kullanıcı adı ve şifre zorunlu'); return; }
+  const isAdmin = document.getElementById('pAdmin').checked;
+  const perms = {
+    canSell: isAdmin || document.getElementById('pSell').checked,
+    canViewReport: isAdmin || document.getElementById('pReport').checked,
+    canManageTables: isAdmin || document.getElementById('pTables').checked,
+    canAddChildren: isAdmin || document.getElementById('pChildren').checked,
+  };
+  await api.post('/api/users', { username, password, displayName: displayName||username, role: isAdmin?'admin':'staff', permissions: perms });
+  document.getElementById('uUsername').value='';
+  document.getElementById('uPassword').value='';
+  document.getElementById('uDisplay').value='';
+  await loadUsers();
+  toast('✅ Kullanıcı eklendi');
+}
+
+async function toggleUser(id, active) {
+  await api.put(`/api/users/${id}`, { active });
+  await loadUsers();
+}
+
+async function deleteUser(id) {
+  if (!confirm('Kullanıcıyı silmek istediğinizden emin misiniz?')) return;
+  await api.del(`/api/users/${id}`);
+  await loadUsers();
+  toast('🗑 Kullanıcı silindi');
+}
+
+// ══ REZERVASYONLAR ══
+let reservations = [];
+let resvFilter = 'all';
+
+async function loadReservations() {
+  reservations = await api.get('/api/reservations');
+  renderReservations();
+}
+
+function filterResv(f) {
+  resvFilter = f;
+  ['All','Today','Week','Wait'].forEach(x=>{
+    const el = document.getElementById('rf'+x);
+    if (el) el.classList.toggle('sel', 'rf'+x === 'rf'+f.charAt(0).toUpperCase()+f.slice(1) || (f==='all'&&x==='All'));
+  });
+  renderReservations();
+}
+
+function renderReservations() {
+  const today = new Date().toISOString().split('T')[0];
+  const weekEnd = new Date(Date.now()+7*86400000).toISOString().split('T')[0];
+
+  let filtered = reservations;
+  if (resvFilter==='today') filtered = reservations.filter(r=>r.date===today);
+  else if (resvFilter==='week') filtered = reservations.filter(r=>r.date>=today&&r.date<=weekEnd);
+  else if (resvFilter==='bekliyor') filtered = reservations.filter(r=>r.status==='bekliyor');
+
+  const el = document.getElementById('resvList');
+  if (!filtered.length) { el.innerHTML='<div class="empty-state"><span class="ei">📅</span><p>Rezervasyon bulunamadı</p></div>'; return; }
+
+  // Tarihe göre grupla
+  const groups = {};
+  filtered.forEach(r=>{
+    if (!groups[r.date]) groups[r.date]=[];
+    groups[r.date].push(r);
+  });
+
+  el.innerHTML = Object.entries(groups).sort(([a],[b])=>a.localeCompare(b)).map(([date,items])=>`
+    <div style="margin-bottom:20px;">
+      <div style="font-family:'Fredoka One',cursive;font-size:16px;color:var(--yellow);margin-bottom:10px;">
+        📅 ${new Date(date+'T12:00:00').toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
+        <span style="font-size:13px;color:var(--text-muted);font-weight:600;margin-left:8px;">${items.length} rezervasyon</span>
+      </div>
+      ${items.map(r=>`
+        <div class="child-card" style="cursor:default;grid-template-columns:auto 1fr auto;margin-bottom:8px;">
+          <div style="font-size:20px;">${r.status==='geldi'?'✅':r.status==='iptal'?'❌':'⏳'}</div>
+          <div>
+            <div class="child-name-text">👶 ${r.childName}</div>
+            <div class="child-sub">👨‍👩‍👧 ${r.parentName} · 📞 ${r.parentPhone}</div>
+            <div class="child-sub">⏱ ${r.duration} dk${r.note?` · 📝 ${r.note}`:''}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">
+            <span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:${r.status==='geldi'?'rgba(6,214,160,.15)':r.status==='iptal'?'rgba(255,92,92,.15)':'rgba(255,209,102,.15)'};color:${r.status==='geldi'?'var(--teal)':r.status==='iptal'?'var(--coral)':'var(--yellow)'};">${r.status}</span>
+            <div style="display:flex;gap:4px;">
+              <button onclick="updateResv('${r._id}','geldi')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(6,214,160,.15);border:1px solid rgba(6,214,160,.3);color:var(--teal);cursor:pointer;">✅ Geldi</button>
+              <button onclick="updateResv('${r._id}','iptal')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(255,92,92,.15);border:1px solid rgba(255,92,92,.3);color:var(--coral);cursor:pointer;">❌ İptal</button>
+              <button onclick="deleteResv('${r._id}')" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:var(--text-muted);cursor:pointer;">🗑</button>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+async function addReservation() {
+  const parentName = document.getElementById('rParent').value.trim();
+  const parentPhone = document.getElementById('rPhone').value.trim();
+  const childName = document.getElementById('rChild').value.trim();
+  const date = document.getElementById('rDate').value;
+  const duration = parseInt(document.getElementById('rDuration').value);
+  const note = document.getElementById('rNote').value.trim();
+  if (!parentName||!childName||!date) { toast('⚠️ Veli adı, çocuk adı ve tarih zorunlu'); return; }
+  const displayDate = new Date(date+'T12:00:00').toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'});
+  await api.post('/api/reservations', { parentName, parentPhone, childName, date, displayDate, duration, note, status:'bekliyor' });
+  ['rParent','rPhone','rChild','rNote'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('rDate').value='';
+  await loadReservations();
+  toast('✅ Rezervasyon eklendi');
+}
+
+async function updateResv(id, status) {
+  await api.put(`/api/reservations/${id}`, { status });
+  await loadReservations();
+}
+
+async function deleteResv(id) {
+  if (!confirm('Rezervasyonu silmek istediğinizden emin misiniz?')) return;
+  await api.del(`/api/reservations/${id}`);
+  await loadReservations();
+}
+
+async function cancelChild(childId) {
+  if (!confirm('Bu kaydı iptal etmek istediğinizden emin misiniz?')) return;
+  await api.del(`/api/children/${childId}`);
+  if (selectedId === childId) { selectedId=null; document.getElementById('menuOverlay').classList.remove('open'); }
+  toast('✅ Kayıt iptal edildi');
+}
+
 // ══ HELPERS ══
 function updateNavCount(){
   const n=children.filter(c=>c.status!=='paid').length;
@@ -1794,8 +2041,11 @@ document.getElementById('menuOverlay').addEventListener('click',function(e){if(e
 
 // ══ INIT ══
 buildMenuCats();
-if(sessionStorage.getItem('lck_auth')==='1'){
+const _savedUser = sessionStorage.getItem('lck_user');
+if(sessionStorage.getItem('lck_auth')==='1' && _savedUser){
+  try { currentUser = JSON.parse(_savedUser); } catch(e) {}
   document.getElementById('loginScreen').classList.add('hidden');
+  applyPermissions();
   loadAll();
 } else {
   document.getElementById('loadingScreen').classList.add('hidden');
