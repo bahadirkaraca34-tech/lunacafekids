@@ -529,30 +529,40 @@ body{font-family:'Poppins',sans-serif;background:var(--dark);color:var(--text);m
 
 .tl-card {
   background: rgba(255,255,255,.05);
-  border: 2px solid var(--card-border);
-  border-radius: 14px;
-  padding: 14px 12px;
+  border: 2px solid rgba(255,255,255,.08);
+  border-radius: 16px;
+  padding: 14px 12px 12px;
   text-align: center;
   position: relative;
   overflow: hidden;
+  transition: all .3s;
 }
 .tl-card::before {
-  content:''; position:absolute; top:0; left:0; right:0; height:3px;
+  content:''; position:absolute; top:0; left:0; right:0; height:4px;
+  border-radius:16px 16px 0 0;
 }
-.tl-card.running::before { background: var(--teal); }
-.tl-card.warning::before { background: var(--yellow); animation: blink .8s infinite; }
-.tl-card.expired::before { background: var(--coral); }
-.tl-card.running { border-color: rgba(6,214,160,.25); }
-.tl-card.warning { border-color: rgba(255,209,102,.4); animation: pulse-warn 1.5s infinite; }
+.tl-card.running::before { background: linear-gradient(90deg,var(--teal),#04A87B); }
+.tl-card.warning::before { background: linear-gradient(90deg,var(--yellow),var(--orange)); animation:blink .8s infinite; }
+.tl-card.expired::before { background: linear-gradient(90deg,var(--coral),#FF3B3B); }
+.tl-card.running { border-color: rgba(6,214,160,.3); }
+.tl-card.warning { border-color: rgba(255,209,102,.5); animation: pulse-warn 1.5s infinite; }
 .tl-card.expired { border-color: rgba(255,92,92,.5); background: rgba(255,92,92,.07); animation: pulse-red 1.5s infinite; }
 
-.tl-name { font-family:'Fredoka One',cursive; font-size:15px; color:var(--text); margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.tl-dur { font-size:10px; color:var(--text-muted); font-weight:600; margin-bottom:6px; }
-.tl-time { font-family:'Fredoka One',cursive; font-size:30px; letter-spacing:1px; line-height:1; }
-.tl-status { font-size:10px; font-weight:700; margin-top:6px; }
-.tl-status.s-run { color:var(--teal); }
-.tl-status.s-warn { color:var(--yellow); }
-.tl-status.s-exp { color:var(--coral); }
+.tl-name {
+  font-family:'Fredoka One',cursive; font-size:14px; color:var(--text);
+  margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.tl-dur { font-size:10px; color:var(--text-muted); font-weight:600; margin-bottom:8px; }
+.tl-time {
+  font-family:'Fredoka One',cursive; font-size:32px; letter-spacing:1px; line-height:1;
+}
+.tl-status {
+  font-size:10px; font-weight:700; margin-top:7px;
+  padding:3px 10px; border-radius:20px; display:inline-block;
+}
+.tl-status.s-run { background:rgba(6,214,160,.15); color:var(--teal); }
+.tl-status.s-warn { background:rgba(255,209,102,.15); color:var(--yellow); }
+.tl-status.s-exp { background:rgba(255,92,92,.15); color:var(--coral); }
 
 /* ══ MASA SİSTEMİ ══ */
 .tables-grid {
@@ -1330,16 +1340,16 @@ function renderPage1(){
 function renderPage2(){
   const active=children.filter(c=>c.status!=='paid');
   const grid=document.getElementById('tvGrid');
-  document.getElementById('tvActiveCount').textContent=active.length+' çocuk';
+  document.getElementById('tvActiveCount').textContent=active.length+' cocuk';
   if(!active.length){
-    grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><span class="ei">🎪</span><p>Henüz kimse yok</p></div>';
+    grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><span class="ei">🎪</span><p>Henuz kimse yok</p></div>';
     return;
   }
   grid.innerHTML=active.map(c=>{
     const mins=Math.floor(c.remaining/60),secs=c.remaining%60;
-    const timeStr=c.status==='expired'?'BİTTİ':String(mins).padStart(2,'0')+':'+String(secs).padStart(2,'0');
+    const timeStr=c.status==='expired'?'DOLDU':String(mins).padStart(2,'0')+':'+String(secs).padStart(2,'0');
     const tc=c.status==='expired'?'tc-red':c.status==='warning'?'tc-yellow':'tc-green';
-    const statusTxt=c.status==='expired'?'🔔 Bitti':c.status==='warning'?'⚠️ Son 5dk':'🟢 Oynuyor';
+    const statusTxt=c.status==='expired'?'Sure Doldu':c.status==='warning'?'Son 5 dk':'Oynuyor';
     const statusCls=c.status==='expired'?'s-exp':c.status==='warning'?'s-warn':'s-run';
     const cid=idStr(c._id);
     return `
@@ -1371,7 +1381,7 @@ function updateTimerDisplays(){
     const el2=document.getElementById('tvt-'+cid);
     const card2=document.getElementById('tvc-'+cid);
     if(el2){
-      if(c.status==='expired'){el2.textContent='BİTTİ';el2.className='tl-time tc-red';}
+      if(c.status==='expired'){el2.textContent='DOLDU';el2.className='tl-time tc-red';}
       else{el2.className='tl-time '+(c.status==='warning'?'tc-yellow':'tc-green');
         el2.textContent=String(Math.floor(c.remaining/60)).padStart(2,'0')+':'+String(c.remaining%60).padStart(2,'0');}
       if(card2) card2.className='tl-card '+c.status;
@@ -1835,24 +1845,28 @@ function closeTableModal() {
 }
 
 function openTableMenu() {
-  const tm = document.getElementById('tableModal');
-  if (tm) tm.classList.remove('open');
-  window._tableMenuMode = true;
-  window._tableMenuNo = activeTableNo;
+  if (!activeTableNo) { toast('Masa seçilmedi'); return; }
+  // Masa modalını kapat
+  document.getElementById('tableModal')?.classList.remove('open');
+  // Menü başlığını set et
   document.getElementById('menuChildName').textContent = `☕ Masa ${activeTableNo}`;
   document.getElementById('menuSubtitle').textContent = 'Masaya ürün ekle';
-  // Ek süre olmadan menü kategorileri
+  // Table mod
+  window._tableMenuMode = true;
+  window._tableMenuNo = activeTableNo;
+  // Kategorileri göster (Ek Süre hariç)
   const container = document.getElementById('menuCats');
-  container.innerHTML = MENU.filter(c=>c.catName!=='Ek Süre').map((cat)=>{
+  container.innerHTML = MENU.filter(c=>c.catName!=='Ek Süre').map(cat=>{
     const i = MENU.indexOf(cat);
     return `<div class="menu-cat-btn" onclick="showMenuItems(${i})">
       <div class="menu-cat-icon">${cat.icon}</div>
       <div class="menu-cat-name">${cat.catName}</div>
     </div>`;
   }).join('');
-  container.style.display='';
+  container.style.display = '';
   document.getElementById('menuItems').classList.remove('active');
-  setTimeout(()=>document.getElementById('menuOverlay').classList.add('open'),50);
+  // Menüyü aç
+  document.getElementById('menuOverlay').classList.add('open');
 }
 
 async function addProdToTable(name, price) {
@@ -2031,27 +2045,31 @@ function renderCalendar() {
   DAYS_TR.forEach(d=>grouped[d]=[]);
   allDays.forEach(d=>grouped[d.dayName].push(d));
 
-  el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;">
+  el.innerHTML = `<div style="display:flex;flex-direction:column;gap:12px;">
     ${DAYS_TR.map(dayName=>{
       const dayDates = grouped[dayName];
-      // Bu gün adına ait tüm rezervasyonlar
       const dayResv = reservations.filter(r=>getDayName(r.date)===dayName && new Date(r.date+'T12:00:00').getMonth()===calMonth && new Date(r.date+'T12:00:00').getFullYear()===calYear);
 
       return `<div style="background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden;">
-        <div style="background:rgba(255,209,102,.1);border-bottom:1px solid rgba(255,209,102,.2);padding:8px 12px;font-family:'Fredoka One',cursive;font-size:14px;color:var(--yellow);">
-          ${dayName}
-          <span style="font-size:11px;color:var(--text-muted);font-weight:600;float:right;">${dayResv.length} kişi</span>
+        <div style="background:rgba(255,209,102,.1);border-bottom:1px solid rgba(255,209,102,.2);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-family:'Fredoka One',cursive;font-size:16px;color:var(--yellow);">${dayName}</span>
+          <span style="font-size:12px;color:var(--text-muted);font-weight:600;">${dayResv.length} rezervasyon</span>
         </div>
-        <div style="padding:8px;min-height:60px;">
-          ${dayResv.length===0 ? '<div style="color:var(--text-muted);font-size:11px;text-align:center;padding:10px 0;">Boş</div>' :
+        <div style="padding:10px 12px;display:flex;flex-wrap:wrap;gap:8px;min-height:44px;">
+          ${dayResv.length===0 ? '<div style="color:var(--text-muted);font-size:12px;padding:4px 0;">Rezervasyon yok</div>' :
             dayResv.map(r=>`
               <div onclick="showResvPopup('${r._id}')"
-                style="padding:6px 8px;margin-bottom:5px;border-radius:8px;cursor:pointer;
+                style="padding:6px 12px;border-radius:10px;cursor:pointer;
                 background:${r.status==='geldi'?'rgba(6,214,160,.1)':r.status==='iptal'?'rgba(255,92,92,.1)':'rgba(255,209,102,.08)'};
                 border:1px solid ${r.status==='geldi'?'rgba(6,214,160,.3)':r.status==='iptal'?'rgba(255,92,92,.3)':'rgba(255,209,102,.2)'};
-                transition:all .2s;">
-                <div style="font-size:12px;font-weight:700;color:var(--text);">👶 ${r.childName}</div>
-                <div style="font-size:10px;color:var(--text-muted);margin-top:1px;">${new Date(r.date+'T12:00:00').getDate()} ${MONTHS_TR[new Date(r.date+'T12:00:00').getMonth()]}</div>
+                display:flex;align-items:center;gap:8px;">
+                <span style="font-size:13px;font-weight:700;color:var(--text);">👶 ${r.childName}</span>
+                <span style="font-size:11px;color:var(--text-muted);">${new Date(r.date+'T12:00:00').getDate()} ${MONTHS_TR[new Date(r.date+'T12:00:00').getMonth()]}</span>
+                <span style="font-size:10px;padding:2px 8px;border-radius:20px;font-weight:700;
+                  background:${r.status==='geldi'?'rgba(6,214,160,.2)':r.status==='iptal'?'rgba(255,92,92,.2)':'rgba(255,209,102,.2)'};
+                  color:${r.status==='geldi'?'var(--teal)':r.status==='iptal'?'var(--coral)':'var(--yellow)'};">
+                  ${r.status==='geldi'?'Geldi':r.status==='iptal'?'İptal':'Bekliyor'}
+                </span>
               </div>
             `).join('')
           }
