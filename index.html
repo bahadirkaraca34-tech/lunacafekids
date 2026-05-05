@@ -1675,7 +1675,7 @@ function renderReport(){
           <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
             <div class="tx-amt">${t.grand}₺</div>
             <div class="tx-pay">${payIcon(t.payment)}</div>
-            <button onclick="openTxEdit('${t._id}')" style="padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;background:rgba(255,209,102,.15);border:1px solid rgba(255,209,102,.3);color:var(--yellow);cursor:pointer;">✏️ Düzenle</button>
+            <button onclick="openTxEdit('${idStr(t._id)}')" style="padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;background:rgba(255,209,102,.15);border:1px solid rgba(255,209,102,.3);color:var(--yellow);cursor:pointer;">✏️ Düzenle</button>
           </div>
         </div>`).join('')
     : '<div style="color:var(--text-muted);font-size:13px;padding:10px 0;">Henüz işlem yok</div>';
@@ -2116,7 +2116,7 @@ let editingTxPayment = 'nakit';
 let editingTxProducts = [];
 
 function openTxEdit(id) {
-  const tx = transactions.find(t => t._id === id);
+  const tx = transactions.find(t => idStr(t._id) === id);
   if (!tx) return;
   editingTxId = id;
   editingTxPayment = tx.payment || 'nakit';
