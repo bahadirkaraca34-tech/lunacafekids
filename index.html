@@ -2120,7 +2120,12 @@ function openTxEdit(id) {
   if (!tx) return;
   editingTxId = id;
   editingTxPayment = tx.payment || 'nakit';
-  editingTxProducts = tx.products ? [...tx.products] : [];
+  // Oyun ücreti + ürünleri birleştir
+  editingTxProducts = [];
+  if (tx.price > 0) {
+    editingTxProducts.push({ name: `Oyun (${tx.duration} dk)`, price: tx.price, _gamePrice: true });
+  }
+  if (tx.products) editingTxProducts.push(...tx.products);
   document.getElementById('txEditName').value = tx.childName;
   selTxPay(editingTxPayment);
   renderTxEditProducts();
@@ -2136,8 +2141,11 @@ function renderTxEditProducts() {
     return;
   }
   el.innerHTML = editingTxProducts.map((p,i)=>`
-    <div class="table-order-item">
-      <span>${p.name}</span>
+    <div class="table-order-item" style="${p._gamePrice?'background:rgba(255,209,102,.05);border-radius:8px;padding:8px;':''}">
+      <span style="display:flex;align-items:center;gap:6px;">
+        ${p._gamePrice?'🎮':''}${p.name}
+        ${p._gamePrice?'<span style="font-size:10px;color:var(--yellow);font-weight:700;">Oyun</span>':''}
+      </span>
       <span style="display:flex;align-items:center;gap:8px;">
         ${p.price}₺
         <span onclick="removeTxProduct(${i})" style="cursor:pointer;color:var(--coral);font-size:14px;font-weight:700;">✕</span>
@@ -2209,11 +2217,15 @@ function closeTxMenuOverlay() {
 async function saveTxEdit() {
   if (!editingTxId) return;
   const name = document.getElementById('txEditName').value.trim();
-  const grand = editingTxProducts.reduce((s,p)=>s+p.price, 0);
-  const prodTotal = editingTxProducts.filter(p=>!p.name.includes('dk')).reduce((s,p)=>s+p.price,0);
+  const gameItem = editingTxProducts.find(p => p._gamePrice);
+  const otherProds = editingTxProducts.filter(p => !p._gamePrice);
+  const gamePrice = gameItem ? gameItem.price : 0;
+  const prodTotal = otherProds.reduce((s,p)=>s+p.price, 0);
+  const grand = gamePrice + prodTotal;
   await api.put(`/api/transactions/${editingTxId}`, {
     childName: name,
-    products: editingTxProducts,
+    price: gamePrice,
+    products: otherProds,
     prodTotal,
     grand,
     payment: editingTxPayment,
