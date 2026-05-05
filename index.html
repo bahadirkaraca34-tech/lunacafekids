@@ -1043,6 +1043,22 @@ body{font-family:'Poppins',sans-serif;background:var(--dark);color:var(--text);m
 </div>
 
 <div class="gunsonu-overlay" id="gunsonuOverlay">
+  <div class="gunsonu-modal">
+    <div class="gunsonu-top">
+      <div class="gunsonu-logo">🌙</div>
+      <div class="gunsonu-title">Luna Cafe Kids</div>
+      <div class="gunsonu-date" id="gsDate">—</div>
+      <div class="gunsonu-tag">GÜNSONU RAPORU</div>
+    </div>
+    <div class="gunsonu-body" id="gunsonuBody"></div>
+    <div class="gunsonu-actions" id="gunsonuActions">
+      <button class="btn-gs-pdf" onclick="pdfOlustur()" id="pdfBtn">📄 PDF Oluştur & Paylaş</button>
+      <button class="btn-gs-kapat" onclick="kapatGunu()">🔒 Kasayı Kapat (Kaydet & Sıfırla)</button>
+      <button class="btn-gs-iptal" onclick="closeGunsonu()">← Geri Dön</button>
+    </div>
+  </div>
+</div>
+
 <!-- TX EDIT MODAL -->
 <div class="table-overlay" id="txEditModal">
   <div class="table-modal">
@@ -1092,21 +1108,6 @@ body{font-family:'Poppins',sans-serif;background:var(--dark);color:var(--text);m
     </div>
     <div class="menu-cats" id="txMenuCats"></div>
     <div class="menu-items" id="txMenuItems"></div>
-  </div>
-</div>
-  <div class="gunsonu-modal">
-    <div class="gunsonu-top">
-      <div class="gunsonu-logo">🌙</div>
-      <div class="gunsonu-title">Luna Cafe Kids</div>
-      <div class="gunsonu-date" id="gsDate">—</div>
-      <div class="gunsonu-tag">GÜNSONU RAPORU</div>
-    </div>
-    <div class="gunsonu-body" id="gunsonuBody"></div>
-    <div class="gunsonu-actions" id="gunsonuActions">
-      <button class="btn-gs-pdf" onclick="pdfOlustur()" id="pdfBtn">📄 PDF Oluştur & Paylaş</button>
-      <button class="btn-gs-kapat" onclick="kapatGunu()">🔒 Kasayı Kapat (Kaydet & Sıfırla)</button>
-      <button class="btn-gs-iptal" onclick="closeGunsonu()">← Geri Dön</button>
-    </div>
   </div>
 </div>
 
