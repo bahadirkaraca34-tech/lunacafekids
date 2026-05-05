@@ -1043,6 +1043,57 @@ body{font-family:'Poppins',sans-serif;background:var(--dark);color:var(--text);m
 </div>
 
 <div class="gunsonu-overlay" id="gunsonuOverlay">
+<!-- TX EDIT MODAL -->
+<div class="table-overlay" id="txEditModal">
+  <div class="table-modal">
+    <div class="table-modal-header">
+      <div class="table-modal-title">✏️ İşlem Düzenle</div>
+      <button class="menu-close" onclick="closeTxEdit()">✕</button>
+    </div>
+    <div class="table-modal-body">
+      <div class="fg" style="margin-bottom:12px;">
+        <label>Ad / Masa</label>
+        <input class="inp" id="txEditName" type="text" placeholder="Çocuk adı veya Masa"/>
+      </div>
+      <div style="margin-bottom:4px;">
+        <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:8px;">Ürünler</label>
+        <div id="txEditProducts"></div>
+        <button onclick="openTxMenuOverlay()" style="width:100%;margin-top:8px;padding:10px;background:rgba(255,209,102,.1);border:1.5px dashed rgba(255,209,102,.3);border-radius:10px;color:var(--yellow);font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">+ Ürün Ekle</button>
+      </div>
+      <div class="table-total-row" style="margin:12px 0;">
+        <span>Toplam</span>
+        <span class="val" id="txEditTotal">0₺</span>
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:8px;">Ödeme Yöntemi</label>
+        <div class="pay-row">
+          <button class="pay-btn" id="txPayNakit" onclick="selTxPay('nakit')"><span class="pay-ico">💵</span>Nakit</button>
+          <button class="pay-btn" id="txPayKart" onclick="selTxPay('kart')"><span class="pay-ico">💳</span>Kart</button>
+          <button class="pay-btn" id="txPayHavale" onclick="selTxPay('havale')"><span class="pay-ico">🏦</span>Havale</button>
+        </div>
+      </div>
+      <button class="btn-start" onclick="saveTxEdit()">💾 Kaydet</button>
+      <button onclick="deleteTx()" style="width:100%;margin-top:8px;padding:12px;background:transparent;border:1.5px solid rgba(255,92,92,.3);border-radius:12px;color:var(--coral);font-family:'Poppins',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">🗑 İşlemi Sil</button>
+    </div>
+  </div>
+</div>
+
+<!-- TX ÜRÜN EKLEME OVERLAY -->
+<div class="menu-overlay" id="txMenuOverlay">
+  <div class="menu-modal">
+    <div class="menu-header">
+      <div class="menu-header-title">
+        <div>
+          <div class="menu-child-name">Ürün Ekle</div>
+          <div class="menu-subtitle">İşleme ürün ekle</div>
+        </div>
+      </div>
+      <button class="menu-close" onclick="closeTxMenuOverlay()">✕</button>
+    </div>
+    <div class="menu-cats" id="txMenuCats"></div>
+    <div class="menu-items" id="txMenuItems"></div>
+  </div>
+</div>
   <div class="gunsonu-modal">
     <div class="gunsonu-top">
       <div class="gunsonu-logo">🌙</div>
@@ -1612,9 +1663,21 @@ function renderReport(){
   document.getElementById('prodSoldList').innerHTML=Object.keys(prodCount).length
     ?Object.entries(prodCount).map(([name,v])=>`<div class="prod-sold-row"><span>${name}</span><span class="count">${v.count}x</span><span style="font-weight:700;">${v.total}₺</span></div>`).join('')
     :'<div style="color:var(--text-muted);font-size:13px;">Henüz ürün satışı yok</div>';
-  document.getElementById('txList').innerHTML=paid.length
-    ?[...paid].reverse().map(t=>`<div class="tx-item"><div><div class="tx-name">👤 ${t.childName}</div><div class="tx-detail">${t.duration}dk · ${t.time} · ${t.products.map(p=>p.name).join(', ')||'—'}</div></div><div style="text-align:right;"><div class="tx-amt">${t.grand}₺</div><div class="tx-pay">${t.payment==='kart'?'💳 Kart':'💵 Nakit'}</div></div></div>`).join('')
-    :'<div style="color:var(--text-muted);font-size:13px;padding:10px 0;">Henüz işlem yok</div>';
+  const payIcon = p => p==='kart'?'💳 Kart':p==='havale'?'🏦 Havale':'💵 Nakit';
+  document.getElementById('txList').innerHTML = paid.length
+    ? [...paid].reverse().map(t=>`
+        <div class="tx-item">
+          <div style="flex:1;">
+            <div class="tx-name">👤 ${t.childName}</div>
+            <div class="tx-detail">${t.duration?t.duration+'dk · ':''}${t.time} · ${t.products.map(p=>p.name).join(', ')||'—'}</div>
+          </div>
+          <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+            <div class="tx-amt">${t.grand}₺</div>
+            <div class="tx-pay">${payIcon(t.payment)}</div>
+            <button onclick="openTxEdit('${t._id}')" style="padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;background:rgba(255,209,102,.15);border:1px solid rgba(255,209,102,.3);color:var(--yellow);cursor:pointer;">✏️ Düzenle</button>
+          </div>
+        </div>`).join('')
+    : '<div style="color:var(--text-muted);font-size:13px;padding:10px 0;">Henüz işlem yok</div>';
   calcCash();
 }
 
@@ -2046,7 +2109,125 @@ async function clearTable() {
   toast(`🗑 Masa ${activeTableNo} temizlendi`);
 }
 
-// ══ AYARLAR ══
+// ══ İŞLEM DÜZENLEME ══
+let editingTxId = null;
+let editingTxPayment = 'nakit';
+let editingTxProducts = [];
+
+function openTxEdit(id) {
+  const tx = transactions.find(t => t._id === id);
+  if (!tx) return;
+  editingTxId = id;
+  editingTxPayment = tx.payment || 'nakit';
+  editingTxProducts = tx.products ? [...tx.products] : [];
+  document.getElementById('txEditName').value = tx.childName;
+  selTxPay(editingTxPayment);
+  renderTxEditProducts();
+  document.getElementById('txEditModal').classList.add('open');
+}
+
+function renderTxEditProducts() {
+  const el = document.getElementById('txEditProducts');
+  const total = editingTxProducts.reduce((s,p)=>s+p.price,0);
+  document.getElementById('txEditTotal').textContent = total + '₺';
+  if (!editingTxProducts.length) {
+    el.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:8px 0;">Ürün yok</div>';
+    return;
+  }
+  el.innerHTML = editingTxProducts.map((p,i)=>`
+    <div class="table-order-item">
+      <span>${p.name}</span>
+      <span style="display:flex;align-items:center;gap:8px;">
+        ${p.price}₺
+        <span onclick="removeTxProduct(${i})" style="cursor:pointer;color:var(--coral);font-size:14px;font-weight:700;">✕</span>
+      </span>
+    </div>`).join('');
+}
+
+function removeTxProduct(idx) {
+  editingTxProducts.splice(idx, 1);
+  renderTxEditProducts();
+}
+
+function selTxPay(p) {
+  editingTxPayment = p;
+  ['nakit','kart','havale'].forEach(x => {
+    document.getElementById('txPay'+x.charAt(0).toUpperCase()+x.slice(1))?.classList.toggle('sel-pay', x===p);
+  });
+}
+
+function closeTxEdit() {
+  document.getElementById('txEditModal').classList.remove('open');
+  editingTxId = null;
+}
+
+function openTxMenuOverlay() {
+  const cats = document.getElementById('txMenuCats');
+  cats.innerHTML = MENU.map((cat,i)=>`
+    <div class="menu-cat-btn" onclick="showTxMenuItems(${i})">
+      <div class="menu-cat-icon">${cat.icon}</div>
+      <div class="menu-cat-name">${cat.catName}</div>
+    </div>`).join('');
+  cats.style.display = '';
+  document.getElementById('txMenuItems').classList.remove('active');
+  document.getElementById('txMenuOverlay').classList.add('open');
+}
+
+function showTxMenuItems(catIdx) {
+  const cat = MENU[catIdx];
+  const itemsEl = document.getElementById('txMenuItems');
+  const catsEl = document.getElementById('txMenuCats');
+  itemsEl.innerHTML = `
+    <button class="menu-back" onclick="showTxMenuCats()">← Kategoriler</button>
+    <div class="menu-cat-title">${cat.icon} ${cat.catName}</div>
+    ${cat.items.map(p=>`
+      <div class="menu-item-btn" onclick="addTxProduct('${p.name}',${p.price})">
+        <span class="menu-item-name">${p.name}</span>
+        <span class="menu-item-price">${p.price}₺</span>
+      </div>`).join('')}`;
+  catsEl.style.display = 'none';
+  itemsEl.classList.add('active');
+}
+
+function showTxMenuCats() {
+  document.getElementById('txMenuCats').style.display = '';
+  document.getElementById('txMenuItems').classList.remove('active');
+}
+
+function addTxProduct(name, price) {
+  editingTxProducts.push({ name, price });
+  renderTxEditProducts();
+  closeTxMenuOverlay();
+  toast(`✅ ${name} eklendi`);
+}
+
+function closeTxMenuOverlay() {
+  document.getElementById('txMenuOverlay').classList.remove('open');
+}
+
+async function saveTxEdit() {
+  if (!editingTxId) return;
+  const name = document.getElementById('txEditName').value.trim();
+  const grand = editingTxProducts.reduce((s,p)=>s+p.price, 0);
+  const prodTotal = editingTxProducts.filter(p=>!p.name.includes('dk')).reduce((s,p)=>s+p.price,0);
+  await api.put(`/api/transactions/${editingTxId}`, {
+    childName: name,
+    products: editingTxProducts,
+    prodTotal,
+    grand,
+    payment: editingTxPayment,
+  });
+  closeTxEdit();
+  toast('✅ İşlem güncellendi');
+}
+
+async function deleteTx() {
+  if (!editingTxId) return;
+  if (!confirm('Bu işlemi silmek istediğinizden emin misiniz?')) return;
+  await api.del(`/api/transactions/${editingTxId}`);
+  closeTxEdit();
+  toast('🗑 İşlem silindi');
+}
 function loadSettingsPage(){
   document.getElementById('set30').value = PRICES[30];
   document.getElementById('set60').value = PRICES[60];
@@ -2355,7 +2536,8 @@ function speak(text){if(!window.speechSynthesis)return;window.speechSynthesis.ca
 // Modal backdrop close
 document.getElementById('recModal').addEventListener('click',function(e){if(e.target===this)closeModal();});
 document.getElementById('menuOverlay').addEventListener('click',function(e){if(e.target===this)closeMenuModal();});
-document.getElementById('tableModal').addEventListener('click',function(e){if(e.target===this)closeTableModal();});
+document.getElementById('txEditModal').addEventListener('click',function(e){if(e.target===this)closeTxEdit();});
+document.getElementById('txMenuOverlay').addEventListener('click',function(e){if(e.target===this)closeTxMenuOverlay();});
 document.getElementById('tableMenuOverlay').addEventListener('click',function(e){if(e.target===this)closeTableMenuOverlay();});
 
 // ══ INIT ══
