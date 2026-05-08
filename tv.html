@@ -25,7 +25,25 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0D0D1A;color:#F0F0F
 .login-field:focus{border-color:#FFD166;}
 .login-field::placeholder{color:rgba(240,240,240,.4);}
 .login-btn{width:100%;padding:13px;background:linear-gradient(135deg,#FF5C5C,#FF8C42);border:none;border-radius:12px;color:white;font-family:'Poppins',sans-serif;font-size:16px;font-weight:800;cursor:pointer;margin-top:4px;}
-.login-error{color:#FF5C5C;font-size:13px;font-weight:600;margin-top:8px;min-height:18px;}
+.login-error{color:#FF5C5C;font-size:13px;font-weight:600;margin-top:10px;min-height:18px;text-align:center;}
+
+.pin-dot{
+  width:14px;height:14px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.3);
+  background:transparent;transition:all .2s;
+}
+.pin-dot.filled{background:#FFD166;border-color:#FFD166;}
+.pin-dot.error{background:#FF5C5C;border-color:#FF5C5C;}
+
+.pin-btn{
+  padding:18px;background:rgba(255,255,255,.08);
+  border:1.5px solid rgba(255,255,255,.1);border-radius:14px;
+  color:#F0F0F0;font-family:'Fredoka One',cursive;font-size:24px;
+  cursor:pointer;transition:all .15s;user-select:none;
+}
+.pin-btn:active{background:rgba(255,209,102,.2);border-color:#FFD166;transform:scale(.95);}
+.pin-clear{background:rgba(255,92,92,.1);border-color:rgba(255,92,92,.3);color:#FF5C5C;}
+.pin-del{background:rgba(255,255,255,.05);font-size:20px;}
 
 /* ── LAYOUT ── */
 .app{display:flex;flex-direction:column;height:100vh;width:100vw;}
@@ -135,12 +153,32 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0D0D1A;color:#F0F0F
 <!-- GİRİŞ -->
 <div class="login-screen" id="loginScreen">
   <div class="login-box">
-    <div class="login-logo">📺 Oyun Alanı</div>
-    <div class="login-sub">Luna Cafe Kids — TV</div>
-    <input class="login-field" id="tvUser" type="text" placeholder="Kullanıcı adı" autocomplete="off" autocorrect="off" autocapitalize="off"/>
-    <input class="login-field" id="tvPass" type="password" placeholder="Şifre" onkeydown="if(event.key==='Enter')tvLogin()"/>
-    <button class="login-btn" onclick="tvLogin()">Giriş Yap</button>
+    <div class="login-logo">📺 Luna Cafe Kids</div>
+    <div class="login-sub">TV Ekranı — PIN Girin</div>
+    <div id="pinDots" style="display:flex;justify-content:center;gap:12px;margin:20px 0;">
+      <div class="pin-dot" id="dot0"></div>
+      <div class="pin-dot" id="dot1"></div>
+      <div class="pin-dot" id="dot2"></div>
+      <div class="pin-dot" id="dot3"></div>
+      <div class="pin-dot" id="dot4"></div>
+      <div class="pin-dot" id="dot5"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px;">
+      <button class="pin-btn" onclick="pinPress(1)">1</button>
+      <button class="pin-btn" onclick="pinPress(2)">2</button>
+      <button class="pin-btn" onclick="pinPress(3)">3</button>
+      <button class="pin-btn" onclick="pinPress(4)">4</button>
+      <button class="pin-btn" onclick="pinPress(5)">5</button>
+      <button class="pin-btn" onclick="pinPress(6)">6</button>
+      <button class="pin-btn" onclick="pinPress(7)">7</button>
+      <button class="pin-btn" onclick="pinPress(8)">8</button>
+      <button class="pin-btn" onclick="pinPress(9)">9</button>
+      <button class="pin-btn pin-clear" onclick="pinClear()">✕</button>
+      <button class="pin-btn" onclick="pinPress(0)">0</button>
+      <button class="pin-btn pin-del" onclick="pinDel()">⌫</button>
+    </div>
     <div class="login-error" id="tvErr"></div>
+    <div style="margin-top:16px;font-size:11px;color:rgba(240,240,240,.3);">© 2025 Karaca Yazılım</div>
   </div>
 </div>
 
@@ -183,21 +221,67 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0D0D1A;color:#F0F0F
 <div class="conn" id="conn"><div class="conn-dot"></div><span id="connTxt">Bağlanıyor...</span></div>
 
 <script>
-const TV_USER = 'lunatv';
-const TV_PASS = 'aynurluna1';
+const TV_PIN = '123321';
+let pinEntry = '';
 
-function tvLogin() {
-  const u = document.getElementById('tvUser').value.trim();
-  const p = document.getElementById('tvPass').value;
-  if (u===TV_USER && p===TV_PASS) {
-    sessionStorage.setItem('tv_auth','1');
+function pinPress(n) {
+  if (pinEntry.length >= 6) return;
+  pinEntry += n;
+  updatePinDots();
+  if (pinEntry.length === 6) {
+    setTimeout(checkPin, 150);
+  }
+}
+
+function pinDel() {
+  pinEntry = pinEntry.slice(0, -1);
+  updatePinDots();
+}
+
+function pinClear() {
+  pinEntry = '';
+  updatePinDots();
+  document.getElementById('tvErr').textContent = '';
+}
+
+function updatePinDots() {
+  for (let i = 0; i < 6; i++) {
+    const dot = document.getElementById('dot' + i);
+    dot.className = 'pin-dot' + (i < pinEntry.length ? ' filled' : '');
+  }
+}
+
+function checkPin() {
+  if (pinEntry === TV_PIN) {
+    sessionStorage.setItem('tv_auth', '1');
     document.getElementById('loginScreen').classList.add('hidden');
     initTV();
   } else {
-    document.getElementById('tvErr').textContent='❌ Hatalı kullanıcı adı veya şifre';
-    document.getElementById('tvPass').value='';
+    for (let i = 0; i < 6; i++) {
+      document.getElementById('dot' + i).className = 'pin-dot error';
+    }
+    document.getElementById('tvErr').textContent = '❌ Hatalı PIN';
+    setTimeout(() => {
+      pinEntry = '';
+      updatePinDots();
+      document.getElementById('tvErr').textContent = '';
+    }, 800);
   }
 }
+
+// Klavye / kumanda desteği
+document.addEventListener('keydown', function(e) {
+  if (!document.getElementById('loginScreen').classList.contains('hidden')) {
+    // Sayı tuşları (0-9)
+    if (e.key >= '0' && e.key <= '9') { pinPress(parseInt(e.key)); return; }
+    // Numpad
+    if (e.code && e.code.startsWith('Numpad') && e.key >= '0' && e.key <= '9') { pinPress(parseInt(e.key)); return; }
+    // Sil
+    if (e.key === 'Backspace' || e.key === 'Delete') { pinDel(); return; }
+    // Escape ile temizle
+    if (e.key === 'Escape') { pinClear(); return; }
+  }
+});
 
 let children=[], socket, reconnTimer=null;
 
