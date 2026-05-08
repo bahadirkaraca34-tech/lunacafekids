@@ -221,10 +221,7 @@ function initTV(){
   socket.on('children:update',()=>loadChildren());
 
   socket.on('timer:tick',(ticks)=>{
-    ticks.forEach(t=>{
-      const c=children.find(x=>x._id?.toString()===t.id?.toString());
-      if(c){c.remaining=t.remaining;c.status=t.status;}
-    });
+    // Artık remaining'e gerek yok, client kendi saatiyle hesaplıyor
     updateDisplays();
     updateCount();
   });
@@ -256,19 +253,33 @@ function renderGrid(){
   grid.innerHTML=active.map(c=>card(c)).join('');
 }
 
-function fmt(r){
-  if(r<=0)return'BİTTİ';
+function getRemaining(c){
+  const exit=new Date(new Date(c.startedAt).getTime()+c.totalSec*1000);
+  return Math.max(0,Math.floor((exit-new Date())/1000));
+}
+
+function getRealStatus(c){
+  const r=getRemaining(c);
+  if(r<=0)return'expired';
+  if(r<=300)return'warning';
+  return'running';
+}
+
+function fmt(c){
+  const r=getRemaining(c);
+  if(r<=0)return'BITTI';
   return String(Math.floor(r/60)).padStart(2,'0')+':'+String(r%60).padStart(2,'0');
 }
 
 function card(c){
   const id=c._id?.toString();
-  const tc=c.status==='expired'?'r':c.status==='warning'?'y':'g';
-  const badge=c.status==='expired'?'br':c.status==='warning'?'by':'bg';
-  const badgeTxt=c.status==='expired'?'Sure Doldu':c.status==='warning'?'Son 5 Dakika':'Oynuyor';
+  const status=getRealStatus(c);
+  const tc=status==='expired'?'r':status==='warning'?'y':'g';
+  const badge=status==='expired'?'br':status==='warning'?'by':'bg';
+  const badgeTxt=status==='expired'?'Sure Doldu':status==='warning'?'Son 5 Dakika':'Oynuyor';
   const girisSaat=new Date(c.startedAt).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
   const cikisSaat=new Date(new Date(c.startedAt).getTime()+c.totalSec*1000).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
-  return`<div class="tc ${c.status}" id="tc-${id}">
+  return`<div class="tc ${status}" id="tc-${id}">
     <div class="tc-name">${c.fullName}</div>
     <div class="tc-times-row">
       <div class="tc-time-block tc-entry">
@@ -277,11 +288,11 @@ function card(c){
       </div>
       <div class="tc-dur-block">
         <div class="tc-time-lbl">${c.duration} dk</div>
-        <div class="tc-time ${tc}" id="tt-${id}">${fmt(c.remaining)}</div>
+        <div class="tc-time ${tc}" id="tt-${id}">${fmt(c)}</div>
       </div>
       <div class="tc-time-block tc-exit">
         <div class="tc-time-lbl">Cikis</div>
-        <div class="tc-time-val ${c.status==='expired'?'tc-exit-red':''}">${cikisSaat}</div>
+        <div class="tc-time-val ${status==='expired'?'tc-exit-red':''}">${cikisSaat}</div>
       </div>
     </div>
     <div class="tc-badge ${badge}">${badgeTxt}</div>
@@ -295,11 +306,20 @@ function updateDisplays(){
     const el=document.getElementById('tt-'+id);
     const cd=document.getElementById('tc-'+id);
     if(!el)return;
-    el.textContent=fmt(c.remaining);
-    el.className='tc-time '+(c.status==='expired'?'r':c.status==='warning'?'y':'g');
-    if(cd)cd.className='tc '+c.status;
+    const status=getRealStatus(c);
+    el.textContent=fmt(c);
+    el.className='tc-time '+(status==='expired'?'r':status==='warning'?'y':'g');
+    if(cd)cd.className='tc '+status;
+    // Expire olunca zil çal
+    if(status==='expired' && !c._alerted){
+      c._alerted=true;
+      playBell();
+    }
   });
 }
+
+// Her saniye gerçek saate göre güncelle
+setInterval(updateDisplays,1000);
 
 function updateCount(){
   document.getElementById('countNum').textContent=children.filter(c=>c.status!=='paid').length;
