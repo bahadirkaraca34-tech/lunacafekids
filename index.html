@@ -1357,8 +1357,8 @@ function showMenuItems(catIdx){
   itemsEl.innerHTML=`
     <button class="menu-back" onclick="showMenuCats()">← Kategoriler</button>
     <div class="menu-cat-title">${cat.icon} ${cat.catName}</div>
-    ${cat.items.map(p=>`
-      <div class="menu-item-btn" onclick="addProdFromMenu('${p.name}',${p.price})">
+    ${cat.items.map((p,ii)=>`
+      <div class="menu-item-btn" data-catidx="${catIdx}" data-itemidx="${ii}" onclick="addMenuItemByIdx(this)">
         <span class="menu-item-name">${p.name}</span>
         <span class="menu-item-price">${p.price}₺</span>
       </div>
@@ -1366,6 +1366,13 @@ function showMenuItems(catIdx){
   `;
   catsEl.style.display='none';
   itemsEl.classList.add('active');
+}
+
+function addMenuItemByIdx(el){
+  const ci=parseInt(el.dataset.catidx);
+  const ii=parseInt(el.dataset.itemidx);
+  const p=MENU[ci].items[ii];
+  addProdFromMenu(p.name,p.price);
 }
 
 function showMenuCats(){
@@ -1406,6 +1413,10 @@ async function addProdFromMenu(name,price){
   if(name==='Ek Sure 30 dk'||name==='Ek Sure 60 dk'){
     const ekDk=name==='Ek Sure 30 dk'?30:60;
     const ekSn=ekDk*60;
+    // Grup mu kontrol et (fullName içinde ' & ' varsa grup)
+    const isGrup = c.fullName && c.fullName.includes(' & ');
+    const kisiSayisi = isGrup ? c.fullName.split(' & ').length : 1;
+    const ekFiyat = price * kisiSayisi;
     // Sunucudan güncel veriyi al
     const fresh = await api.get('/api/children');
     const freshChild = fresh.find(x=>idStr(x._id)===idStr(c._id));
@@ -1413,13 +1424,13 @@ async function addProdFromMenu(name,price){
     const curTotalSec = freshChild ? freshChild.totalSec : c.totalSec;
     const curDuration = freshChild ? freshChild.duration : c.duration;
     await api.put(`/api/children/${c._id}`,{
-      products:[...c.products,{name,price}],
+      products:[...c.products,{name:`${name}${kisiSayisi>1?' ('+kisiSayisi+' kişi)':''}`,price:ekFiyat}],
       remaining: curRemaining + ekSn,
       totalSec: curTotalSec + ekSn,
       duration: curDuration + ekDk,
       status:'running',
     });
-    toast(`⏱ ${ekDk} dk ek süre eklendi!`);
+    toast(`⏱ ${ekDk} dk ek süre eklendi! ${kisiSayisi>1?'('+kisiSayisi+' kişi × '+price+'₺ = '+ekFiyat+'₺)':ekFiyat+'₺'}`);
     speak(`${c.firstName.split(' ')[0]}, ${ekDk} dakika ek süre eklendi!`);
   } else {
     await api.put(`/api/children/${c._id}`,{products:[...c.products,{name,price}]});
@@ -2070,9 +2081,8 @@ function closeTableModal() {
 function openTableMenu() {
   if (!activeTableNo) return;
   document.getElementById('tableMenuTitle').textContent = `☕ Masa ${activeTableNo}`;
-  // Kategorileri doldur
   const cats = document.getElementById('tableMenuCats');
-  cats.innerHTML = MENU.filter(c=>c.catName!=='Ek Süre').map(cat=>{
+  cats.innerHTML = MENU.filter(c=>!c.catName.includes('Ek')).map(cat=>{
     const i = MENU.indexOf(cat);
     return `<div class="menu-cat-btn" onclick="showTableMenuItems(${i})">
       <div class="menu-cat-icon">${cat.icon}</div>
@@ -2091,13 +2101,20 @@ function showTableMenuItems(catIdx) {
   itemsEl.innerHTML = `
     <button class="menu-back" onclick="showTableMenuCats()">← Kategoriler</button>
     <div class="menu-cat-title">${cat.icon} ${cat.catName}</div>
-    ${cat.items.map(p=>`
-      <div class="menu-item-btn" onclick="addProdToTable('${p.name}',${p.price})">
+    ${cat.items.map((p,ii)=>`
+      <div class="menu-item-btn" data-catidx="${catIdx}" data-itemidx="${ii}" onclick="addTableItemByIdx(this)">
         <span class="menu-item-name">${p.name}</span>
         <span class="menu-item-price">${p.price}₺</span>
       </div>`).join('')}`;
   catsEl.style.display = 'none';
   itemsEl.classList.add('active');
+}
+
+function addTableItemByIdx(el){
+  const ci=parseInt(el.dataset.catidx);
+  const ii=parseInt(el.dataset.itemidx);
+  const p=MENU[ci].items[ii];
+  addProdToTable(p.name,p.price);
 }
 
 function showTableMenuCats() {
@@ -2229,13 +2246,20 @@ function showTxMenuItems(catIdx) {
   itemsEl.innerHTML = `
     <button class="menu-back" onclick="showTxMenuCats()">← Kategoriler</button>
     <div class="menu-cat-title">${cat.icon} ${cat.catName}</div>
-    ${cat.items.map(p=>`
-      <div class="menu-item-btn" onclick="addTxProduct('${p.name}',${p.price})">
+    ${cat.items.map((p,ii)=>`
+      <div class="menu-item-btn" data-catidx="${catIdx}" data-itemidx="${ii}" onclick="addTxItemByIdx(this)">
         <span class="menu-item-name">${p.name}</span>
         <span class="menu-item-price">${p.price}₺</span>
       </div>`).join('')}`;
   catsEl.style.display = 'none';
   itemsEl.classList.add('active');
+}
+
+function addTxItemByIdx(el){
+  const ci=parseInt(el.dataset.catidx);
+  const ii=parseInt(el.dataset.itemidx);
+  const p=MENU[ci].items[ii];
+  addTxProduct(p.name,p.price);
 }
 
 function showTxMenuCats() {
