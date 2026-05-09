@@ -66,15 +66,28 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0D0D1A;color:#F0F0F
 .hdr-count-lbl{font-size:11px;color:rgba(240,240,240,.4);font-weight:600;margin-top:2px;}
 
 /* ── GRID ── */
-.grid-wrap{flex:1;overflow:hidden;padding:12px 16px;}
+.grid-wrap{flex:1;overflow-y:auto;padding:10px 12px;}
 .timer-grid{
   display:grid;
   grid-template-columns:repeat(4,1fr);
   gap:10px;
-  height:100%;
   align-content:start;
 }
-@media(max-width:900px){.timer-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:1024px){.timer-grid{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:700px){
+  .timer-grid{grid-template-columns:1fr;gap:8px;}
+  .hdr{padding:8px 14px;}
+  .hdr-logo-text{font-size:15px;}
+  .hdr-clock{font-size:22px;}
+  .hdr-count{font-size:20px;}
+  .tc{padding:12px 14px 10px;border-radius:12px;}
+  .tc-name{font-size:16px;margin-bottom:6px;}
+  .tc-times-row{padding:6px 0;}
+  .tc-time-val{font-size:18px;}
+  .tc-time{font-size:30px;}
+  .tc-time-lbl{font-size:10px;}
+  .tc-badge{font-size:10px;padding:3px 10px;}
+}
 
 /* ── CARD ── */
 .tc{
